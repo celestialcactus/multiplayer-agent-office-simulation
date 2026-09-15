@@ -1,0 +1,87 @@
+import {workingStyle} from './personality.mjs';
+import { randomUUID } from 'node:crypto';
+export const NPCS=[
+ {id:'designer',name:'Maya',role:'Designer',color:'#f3ba77',persona:'Empathetic and visual. Ask who is affected and test assumptions with small prototypes.',interest:'Reduce onboarding friction through user interviews and first-use journey mapping.'},
+ {id:'credit',name:'Ellis',role:'Credit analyst',color:'#ad9ef2',persona:'Measured and evidence driven. Look for hidden assumptions, incentives, uncertainty, and downside.',interest:'Explain credit decisions transparently and distinguish useful signals from biased proxies.'},
+ {id:'frontend',name:'Jules',role:'Frontend developer',color:'#70c6e4',persona:'Practical and inclusive. Connect usability to accessibility, performance, and testable interaction.',interest:'Make complex forms accessible and reduce confusing errors without hiding important information.'},
+ {id:'backend',name:'Theo',role:'Backend developer',color:'#ef94ac',persona:'Systems thinker. Trace data provenance, reliability, boundaries, and failure modes.',interest:'Design trustworthy event histories and resilient services that preserve the origin of information.'}
+];
+export function validateProfile(p){
+ if(!p||typeof p!=='object')throw new Error('Agent configuration is required.');
+ const out={};for(const [key,max,required] of [['name',40,true],['role',100,true],['persona',300,true],['interests',1800,true],['privateNotes',1200,false],['intent',800,false]]){if(p[key]!==undefined&&typeof p[key]!=='string')throw new Error(`Invalid ${key}.`);out[key]=(p[key]||'').trim();if(out[key].length>max||(required&&!out[key]))throw new Error(`Please supply ${key} (up to ${max} characters).`)}
+ out.color=/^#[0-9a-f]{6}$/i.test(p.color||'')?p.color:'#b9f47a';return out;
+}
+export function newOffice(profile,{id=randomUUID(),mode='demo',now=Date.now(),callLimit=60}={}){
+ const p=validateProfile(profile);const agents=[{id:'player',...p},...structuredClone(NPCS)].map(a=>({...a,activity:'Deep work',stalls:0,taskId:null}));
+ const s={id,mode,createdAt:now,expiresAt:now+8*60*60*1000,status:'running',minute:0,speed:4,lastTick:now,lastSeen:now,lastActivity:0,nextEncounter:16,revision:0,generation:0,agents,ideas:[],events:[],outputs:[],meetings:[],commands:[],calls:0,callLimit,job:null,busy:false,researchCursor:0};
+ agents.forEach(a=>s.ideas.push({id:randomUUID(),text:(a.interests||a.interest)+(a.intent?'\nDesired outcome and constraints: '+a.intent:''),knownBy:[a.id],contributors:[a.id],originEvent:null,status:'queued',attempts:0}));event(s,'Arrival','The office is open',`${p.name} joins Maya, Ellis, Jules, and Theo. ${mode==='demo'?'Scripted demo: exchanges and research examples are not live inference.':'Live inference enabled. Research uses configured public sources; each finding needs review.'}`);return s;
+}
+export function event(s,kind,title,text,extra={}){const e={id:randomUUID(),minute:s.minute,kind,title,text,...extra};s.events.push(e);s.events=s.events.slice(-100);return e}
+export function researchMemory(s,agentId){
+ const own=s.outputs.filter(o=>o.agentId===agentId&&(o.scope==='shareable'||(!o.scope&&s.ideas.some(i=>i.id===o.ideaId&&i.scope!=='private')))).slice(-3).map(o=>({outputId:o.id,authorId:o.agentId,summary:o.text,kind:o.mode==='demo'?'demo plan':o.sources.length?'research note; claims need review':'unresolved research',originEvent:o.originEvent,contributors:o.contributors,sources:o.sources.map(({id,title,url})=>({id,title,url}))}));
+ const received=s.ideas.filter(i=>i.knownBy.includes(agentId)&&i.scope!=='private').flatMap(i=>i.researchNotes||[]).slice(-3);
+ const notes=new Map();for(const note of [...received,...own])notes.set(note.outputId,note);return [...notes.values()].slice(-6);
+}
+export function shareContext(s,agentId){const a=s.agents.find(a=>a.id===agentId);return {name:a.name,role:a.role,persona:a.persona,workingStyle:workingStyle(a.privateNotes||''),interests:a.interests||a.interest,intent:a.intent||'',recentExchanges:s.events.filter(e=>e.turns?.some(t=>t.agentId===agentId)).slice(-3).map(e=>({id:e.id,kind:e.kind,turns:e.turns.map(t=>({agentId:t.agentId,text:t.text}))})),research:researchMemory(s,agentId),ideas:s.ideas.filter(i=>i.knownBy.includes(agentId)&&i.scope!=='private').slice(-8).map(i=>({id:i.id,text:i.text,contributors:i.contributors}))}}
+export function snapshot(s){const copy=structuredClone(s);delete copy.id;delete copy.commands;delete copy.job;delete copy.lastSeen;delete copy.lastTick;delete copy.generation;copy.agents.forEach(a=>{delete a.privateNotes});return copy}
+export function applyCommand(s,c,now=Date.now()){
+ if(!c||typeof c.commandId!=='string'||c.commandId.length>80||!c.commandId)throw new Error('A command ID is required.');if(s.commands.includes(c.commandId))return;
+ if(s.expiresAt<=now)throw new Error('This office session has expired.');if(s.status==='complete')throw new Error('The workday is complete.');
+ switch(c.type){
+ case 'pause':s.status='paused';break;
+ case 'resume':if(s.calls>=s.callLimit)throw new Error('Model call limit reached. End the day to collect your report.');s.status='running';s.lastTick=now;break;
+ case 'speed':if(![1,4,12].includes(c.speed))throw new Error('Choose 1×, 4×, or 12×.');s.speed=c.speed;break;
+ case 'coffee':if(s.status!=='running')throw new Error('Resume the day first.');s.nextEncounter=Math.min(s.nextEncounter,s.minute);break;
+ case 'meeting':{
+   if(s.status!=='running')throw new Error('Resume the day first.');
+   const participants=['player',...new Set(c.participants||[])];if(participants.length<2||participants.length>5||participants.some(id=>!s.agents.some(a=>a.id===id))||!['designer','credit','frontend','backend'].includes(participants[1]))throw new Error('Choose valid coworkers.');
+   if(![0,15,30,60].includes(c.delay))throw new Error('Choose a valid meeting time.');const start=s.minute+c.delay,end=start+30;
+   if(end>480)throw new Error('There is not enough time left today.');if(s.meetings.length>=10)throw new Error('This day already has ten meetings.');
+   if(s.meetings.some(m=>m.status!=='cancelled'&&m.status!=='done'&&start<m.end&&end>m.start&&participants.some(p=>m.participants.includes(p))))throw new Error('A participant already has a meeting then.');
+   s.meetings.push({id:randomUUID(),participants,start,end,status:'scheduled'});event(s,'Schedule','A meeting is on the calendar',`A 30-minute exchange with ${participants.slice(1).map(id=>s.agents.find(a=>a.id===id).name).join(', ')}.`);break;
+ }
+ case 'cancelMeeting':{const m=s.meetings.find(m=>m.id===c.meetingId&&m.status==='scheduled');if(!m)throw new Error('Only upcoming meetings can be cancelled.');m.status='cancelled';break;}
+ case 'finish':s.status='complete';s.generation++;s.busy=false;s.job=null;s.agents.forEach(a=>a.activity='Day complete');event(s,'Report','The workday is complete','Completed findings and unfinished questions are ready in your report.');break;
+ default:throw new Error('Unknown office command.');}
+ s.commands.push(c.commandId);s.commands=s.commands.slice(-200);s.lastSeen=now;
+}
+export function tick(s,now=Date.now(),random=Math.random){
+ if(s.expiresAt<=now){s.status='expired';s.generation++;s.job=null;s.busy=false;return null}
+ if(s.status==='running'&&s.calls>=s.callLimit){
+  s.lastTick=now;
+  if(!s.budgetNotified){s.budgetNotified=true;event(s,'Budget','Model call limit reached',`All ${s.callLimit} model calls have been used. Finishing any in-flight work; the report will then be ready.`)}
+  if(!s.job){s.endReason='budget';applyCommand(s,{type:'finish',commandId:randomUUID()},now)}
+  return null;
+ }
+ if(s.status!=='running'){s.lastTick=now;return null}
+ if(now-s.lastSeen>120000){s.status='paused';s.lastTick=now;event(s,'Pause','Paused while you are away','The office keeps its context. Resume when you return.');return null}
+ s.minute=Math.min(480,s.minute+Math.min(5,(now-s.lastTick)/1000)*s.speed/2);s.lastTick=now;
+ if(s.minute>=480){applyCommand(s,{type:'finish',commandId:randomUUID()},now);return null}
+ for(const m of s.meetings.filter(m=>m.status==='discussed'&&s.minute>=m.end)){m.status='done';m.participants.forEach(id=>s.agents.find(a=>a.id===id).activity='Deep work')}
+ if(s.job||s.calls>=s.callLimit)return null;
+ const meeting=s.meetings.find(m=>m.status==='scheduled'&&m.start<=s.minute);
+ let job;if(meeting){meeting.status='active';meeting.participants.forEach(id=>s.agents.find(a=>a.id===id).activity='Meeting');job={kind:'meeting',participants:meeting.participants,meetingId:meeting.id}}
+ else if(s.meetings.some(m=>m.status==='discussed'&&m.end>s.minute))return null;
+ else if(s.minute>=s.nextEncounter){const p=s.events.filter(e=>e.kind==='Encounter').length%3===2?NPCS[Math.floor(random()*NPCS.length)].id:'player';const candidates=s.agents.filter(a=>a.id!==p);const q=candidates[Math.floor(random()*candidates.length)].id;job={kind:'encounter',participants:[p,q]};job.participants.forEach(id=>s.agents.find(a=>a.id===id).activity='Encounter');s.nextEncounter=s.minute+30+random()*25}
+ else if(s.minute-s.lastActivity>=10){const a=s.agents[s.researchCursor++%s.agents.length];const ideas=s.ideas.filter(i=>i.knownBy.includes(a.id)&&i.status!=='researched'&&i.attempts<2);if(!ideas.length){a.activity='Break';s.lastActivity=s.minute;return null}job={kind:'research',participants:[a.id],candidates:ideas.slice(-6).map(i=>i.id)};a.activity='Deep work'}
+ if(!job)return null;job={...job,id:randomUUID(),generation:s.generation,startedAt:now};s.job=job;s.busy=true;s.lastActivity=s.minute;return structuredClone(job);
+}
+export function completeJob(s,job,result){
+ if(!s.job||s.job.id!==job.id||s.generation!==job.generation||!['running','paused'].includes(s.status))return;
+ if(result.error){event(s,'Attention','Work paused on this attempt',result.error);job.participants.forEach(id=>{const a=s.agents.find(a=>a.id===id);a.stalls++;a.activity='Break'});if(job.kind==='research'){const i=s.ideas.find(i=>i.id===(result.ideaId||job.candidates[0]));if(i)i.attempts++}if(job.meetingId)s.meetings.find(m=>m.id===job.meetingId).status='done';}
+ else if(job.kind==='research'){
+   const idea=s.ideas.find(i=>i.id===result.ideaId);if(!idea||!idea.knownBy.includes(job.participants[0]))throw new Error('Invalid research provenance.');idea.attempts++;idea.status=result.sources.length?'researched':'needs sources';
+   const output={id:randomUUID(),agentId:job.participants[0],ideaId:idea.id,originEvent:idea.originEvent,contributors:[...idea.contributors],text:result.text,sources:result.sources,mode:s.mode,scope:idea.scope==='private'?'private':'shareable'};s.outputs.push(output);s.outputs=s.outputs.slice(-30);event(s,'Research',`${s.agents.find(a=>a.id===output.agentId).name} explored an idea`,result.text,{outputId:output.id});job.participants.forEach(id=>s.agents.find(a=>a.id===id).activity=result.sources.length?'Deep work':'Break');
+ }else{
+   const e=event(s,job.kind==='meeting'?'Meeting':'Encounter',job.kind==='meeting'?'A longer exchange':'An idea over coffee','',{turns:result.turns});
+   for(const t of result.turns){
+     if(!job.participants.includes(t.agentId))throw new Error('Invalid conversation participant.');
+     const available=researchMemory(s,t.agentId);
+     const researchNotes=available.filter(n=>(t.researchIds||[]).includes(n.outputId)).map(n=>({...structuredClone(n),summary:t.text,sharedBy:t.agentId,sharedEvent:e.id}));
+     s.ideas.push({id:randomUUID(),text:t.text,knownBy:[...job.participants],contributors:[...new Set([t.agentId,...job.participants])],originEvent:e.id,researchNotes,status:'queued',attempts:0,scope:'shared'});
+   }s.ideas=s.ideas.slice(-60);
+   if(job.meetingId)s.meetings.find(m=>m.id===job.meetingId).status='discussed';else job.participants.forEach(id=>s.agents.find(a=>a.id===id).activity='Deep work');
+ }
+ s.job=null;s.busy=false;
+}
+export function report(s){return {markdown:[`# ${s.agents[0].name}'s office report`,s.mode==='demo'?'SCRIPTED DEMONSTRATION — not live AI research.':'Live Bedrock session — findings require human review.',`\n${s.outputs.length} research notes · ${s.events.filter(e=>e.turns).length} exchanges · ${s.calls} inference steps`,`\n## Research outputs`,...s.outputs.map(o=>`\n### ${s.agents.find(a=>a.id===o.agentId).name}\n${o.text}\n\nContributors: ${o.contributors.map(id=>s.agents.find(a=>a.id===id)?.name||id).join(', ')}\nOrigin exchange: ${o.originEvent||'Initial interest'}\n${o.sources.map(src=>`- ${src.title}: ${src.url}`).join('\n')}`),`\n## Open ideas`,...s.ideas.filter(i=>i.knownBy.includes('player')&&i.status!=='researched').slice(-12).map(i=>`- ${i.text}`),`\n## Limits`,`This report is session-scoped. Attribution records contributions, not intellectual-property ownership. ${s.mode==='demo'?'Use live inference to evaluate actual idea quality.':'Research uses retrieved public-source snippets, not a complete review of every page. Findings and inferred connections require human review.'}`].join('\n')};}

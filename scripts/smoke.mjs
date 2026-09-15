@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+const base=process.env.OFFICE_URL||'http://127.0.0.1:5188';let cookie;
+async function request(path,{method='GET',body,auth=true}={}){const r=await fetch(base+'/api/'+path,{method,headers:{Origin:base,...(body?{'Content-Type':'application/json'}:{}),...(cookie&&auth?{Cookie:cookie}:{})},body:body?JSON.stringify(body):undefined});return {r,json:await r.json()}}
+const profile={name:'Smoke Test',role:'Researcher',persona:'Curious and precise',interests:'Help new teammates find organizational knowledge',privateNotes:'SMOKE-PRIVATE-CANARY',color:'#b9f47a'};
+const cfg=await request('config');assert.equal(cfg.json.mode,'demo','Smoke test requires demo mode; it must not accidentally bill live calls.');
+const created=await request('sessions',{method:'POST',body:profile});assert.equal(created.r.status,201);cookie=created.r.headers.get('set-cookie').split(';')[0];assert.equal(created.json.agents.length,5);assert(!JSON.stringify(created.json).includes(profile.privateNotes));
+assert.equal((await request('session',{auth:false})).r.status,401);
+const forged=await fetch(base+'/api/session/commands',{method:'POST',headers:{Cookie:cookie,'Content-Type':'application/json',Origin:'https://invalid.example'},body:JSON.stringify({type:'pause',commandId:'forged'})});assert.equal(forged.status,403);
+await request('session/commands',{method:'POST',body:{type:'speed',speed:12,commandId:'speed'}});
+const meeting={type:'meeting',participants:['designer','backend'],delay:0,commandId:'meeting'};await request('session/commands',{method:'POST',body:meeting});await request('session/commands',{method:'POST',body:meeting});
+let s;for(let attempt=0;attempt<45;attempt++){s=(await request('session')).json;if(s.outputs.length&&s.events.some(e=>e.kind==='Meeting'&&e.turns?.length)&&s.events.some(e=>e.kind==='Encounter'&&e.turns?.length))break;await new Promise(r=>setTimeout(r,1000))}
+assert(s.outputs.length>0,'Expected autonomous research');assert(s.events.some(e=>e.kind==='Meeting'&&e.turns.length===4),'Expected a 4-turn meeting');assert(s.events.some(e=>e.kind==='Encounter'),'Expected an encounter');assert.equal(s.meetings.length,1,'Meeting command must be idempotent');
+await request('session/commands',{method:'POST',body:{type:'pause',commandId:'pause'}});const minute=(await request('session')).json.minute;await new Promise(r=>setTimeout(r,1300));assert.equal((await request('session')).json.minute,minute);
+const finished=await request('session/commands',{method:'POST',body:{type:'finish',commandId:'finish'}});assert.equal(finished.json.status,'complete');const report=await request('session/report');assert(report.json.markdown.includes('SCRIPTED DEMONSTRATION'));assert(!report.json.markdown.includes(profile.privateNotes));
+await request('session',{method:'DELETE'});assert.equal((await request('session')).r.status,401);
+console.log(JSON.stringify({passed:true,checks:['create avatar','session cookie','private note omission','unauthorized access','cross-origin rejection','idempotent meeting','meeting exchange','random encounter','autonomous demo research','pause','refresh continuity','report','delete'],outputs:s.outputs.length,events:s.events.length}));

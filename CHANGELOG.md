@@ -1,5 +1,13 @@
 # Changelog
 
+## Action-level escalation — 2026-09-16
+
+- Optional information no longer parks an idea. Research and discussion continue on a concrete next action.
+- Human questions carry a rationale and name only the dependent action; unrelated steering preserves unresolved questions.
+- Action history tracks execution, completion, blocked dependencies, and deferred repeated attempts.
+- Work-plan UI shows rationale and provisional assumptions without repeating the question in a second panel.
+- Build plan, acceptance checks, and future code-tool boundaries: [action escalation](docs/action-escalation.md).
+
 ## Nonblocking steering and alternate work — 2026-09-16
 
 - Questions no longer freeze the office clock, encounters, meetings, or research.

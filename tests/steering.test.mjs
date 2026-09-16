@@ -10,7 +10,7 @@ test('open human questions allow research, encounters, meetings and steering',()
   const s=newOffice(profile,{now:0});const j=tick(s,1000);completeJob(s,j,reply({needsInput:true,question:'Who is the audience?'}));
   if(kind==='encounter')applyCommand(s,{type:'coffee',commandId:'coffee'},1001);
   if(kind==='meeting')applyCommand(s,{type:'meeting',commandId:'meeting',participants:['designer'],delay:0},1001);
-  const next=tick(s,10000);assert.equal(next.kind,kind);if(kind==='research'){assert(next.candidates.every(id=>!s.ideas.find(i=>i.id===id).projectTask&&!s.ideas.find(i=>i.id===id).projectSeed));assert(next.candidates.some(id=>s.ideas.find(i=>i.id===id).projectExploration));}assert(s.minute>0);assert.equal(s.project.waiting,true);
+  const next=tick(s,10000);assert.equal(next.kind,kind);if(kind==='research'){assert(next.candidates.some(id=>s.ideas.find(i=>i.id===id).projectTask));assert(!s.ideas.some(i=>i.status==='awaiting context'));}assert(s.minute>0);assert.equal(s.project.waiting,true);
   applyCommand(s,{type:'message',commandId:'m',text:'Customers, not employees.'},10001);const guided=tick(s,11000);assert.equal(guided.kind,'guidance');completeJob(s,guided,reply());assert.equal(s.project.waiting,false);
  }
 });
@@ -53,7 +53,7 @@ test('synthesis cannot consume unshared NPC findings or private encounters',asyn
  const s=newOffice(profile);s.project.knownBy.push('designer');
  s.outputs.push({id:'secret',agentId:'designer',text:'UNSHARED-CANARY',sources:[],scope:'shareable'});
  s.events.push({id:'private',turns:[{agentId:'designer',text:'UNSHARED-CANARY'},{agentId:'backend',text:'Private exchange'}]});
- let data;await guidance({mode:'bedrock',think:async(_,d)=>{data=d;return JSON.stringify(reply())}},s,{},async()=>{});
+ let data;await guidance({mode:'bedrock',think:async(_,d)=>{data=d;return JSON.stringify(d.trigger==='automatic synthesis'||d.trigger==='user input'?assessment():reply())}},s,{},async()=>{});
  assert(!JSON.stringify(data).includes('UNSHARED-CANARY'));
  const job={id:'npc',kind:'research',participants:['designer'],generation:0};s.job=job;s.project.dirty=false;
  completeJob(s,job,{ideaId:s.ideas.find(i=>i.knownBy.includes('designer')).id,text:'New private finding',sources:[]});assert.equal(s.project.dirty,false);
@@ -63,10 +63,11 @@ test('an unanswered question still permits disconnect auto-pause',()=>{
 });
 test('routine synthesis never reapplies an earlier correction',async()=>{
  const s=newOffice(profile);s.project.pending=false;s.project.messages.push({role:'user',text:'Customer onboarding, not employee onboarding.'});
- const r=await guidance({mode:'bedrock',think:async()=>JSON.stringify(reply({contextChanged:true}))},s,{},async()=>{});assert.equal(r.contextChanged,false);
+ const r=await guidance({mode:'bedrock',think:async(_,d)=>JSON.stringify(d.trigger==='automatic synthesis'?assessment():reply({contextChanged:true}))},s,{},async()=>{});assert.equal(r.contextChanged,false);
 });
-test('question extraction preserves independent work without a scheduler gate',async()=>{
+function assessment(extra={}){return {action:'Compare accessible onboarding approaches',kind:'research',reason:'Public evidence can inform this idea without selecting participants.',question:'',questionKind:'none',blockedAction:'',resolvesQuestion:false,assumptions:[],...extra}}
+test('action assessment names a precise dependency while retaining useful same-idea work',async()=>{
  const s=newOffice(profile);applyCommand(s,{type:'message',commandId:'human',text:'Ask me which customer segment before choosing participants.'});let calls=0;
- const r=await guidance({mode:'bedrock',think:async(system)=>{calls++;if(calls===1)return JSON.stringify({question:'Which customer segment can we recruit?'});assert(system.includes('never stop the workday'));return JSON.stringify(reply({needsInput:false,question:'',nextStep:'Compare public accessibility evidence without choosing participants.'}));}},s,{},async()=>{});
- assert.equal(r.needsInput,true);assert(r.nextStep.includes('without choosing'));assert.equal(calls,2);
+ const r=await guidance({mode:'bedrock',think:async()=>{calls++;return JSON.stringify(calls===1?assessment({question:'Which customer segment can we recruit?',questionKind:'decision',blockedAction:'Choose recruitment participants'}):reply());}},s,{},async()=>{});
+ assert.equal(r.needsInput,true);assert.equal(r.assessment.blockedAction,'Choose recruitment participants');assert.equal(r.nextStep,'Compare accessible onboarding approaches');assert.equal(calls,2);
 });

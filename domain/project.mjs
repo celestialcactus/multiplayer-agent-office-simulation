@@ -1,11 +1,12 @@
+import {applyAssessment} from './actions.mjs';
 import {randomUUID} from 'node:crypto';
 
 export function createProject(profile){
- return {workPolicy:'nonblocking',revision:1,knownBy:['player'],inputs:[{id:'initial',text:profile.interests,intent:profile.intent||'',constraints:profile.constraints||'',facts:profile.facts||'',unknowns:profile.unknowns||''}],messages:[],pending:true,waiting:false,question:'',nextStep:'Reviewing your problem and intended outcome.',brief:null,artifact:null,artifactHistory:[],dirty:false,lastSynthesisCount:0};
+ return {workPolicy:'action-escalation-v1',actions:[],questions:[],revision:1,knownBy:['player'],inputs:[{id:'initial',text:profile.interests,intent:profile.intent||'',constraints:profile.constraints||'',facts:profile.facts||'',unknowns:profile.unknowns||''}],messages:[],pending:true,waiting:false,question:'',nextStep:'Reviewing your problem and intended outcome.',brief:null,artifact:null,artifactHistory:[],dirty:false,lastSynthesisCount:0};
 }
 export function projectContext(s,id){
  const p=s.project;if(!p||!p.knownBy.includes(id))return null;
- return {revision:p.revision,inputs:p.inputs,brief:p.brief,nextStep:p.nextStep,question:p.question,artifact:p.artifact?{proposal:p.artifact.proposal,test:p.artifact.test,successCriteria:p.artifact.successCriteria}:null};
+ return {revision:p.revision,inputs:p.inputs,brief:p.brief,nextStep:p.nextStep,question:p.question,questions:p.questions?.filter(q=>q.status==='open'),actions:p.actions?.slice(-8),assessment:p.assessment,artifact:p.artifact?{proposal:p.artifact.proposal,test:p.artifact.test,successCriteria:p.artifact.successCriteria}:null};
 }
 export function steer(s,text){
  if(typeof text!=='string'||!text.trim()||text.length>2000)throw new Error('Please write a message of 1–2000 characters.');
@@ -13,6 +14,7 @@ export function steer(s,text){
  const p=s.project??=createProject(s.agents[0]);if(p.inputs.length>=40)throw new Error('This pilot supports 39 messages per workday. Start a fresh office to continue.');
  p.revision++;const id=randomUUID();p.inputs.push({id,text:text.trim()});p.messages.push({id,role:'user',text:text.trim(),revision:p.revision});
  p.pending=true;p.nextStep='Updating my understanding from your message.';p.dirty=false;
+ for(const action of p.actions||[])if(action.status==='running')action.status='ready';
  s.generation++;s.job=null;s.busy=false;s.agents.forEach(a=>a.activity='Reviewing context');
  for(const m of s.meetings.filter(m=>['active','discussed'].includes(m.status)))m.status='done';
  // Mark the draft stale until the message has been interpreted.
@@ -29,27 +31,27 @@ export function validateGuidance(raw,validEvidenceIds){
 }
 export function applyGuidance(s,result){
  const p=s.project;if(result.contextChanged){for(const o of s.outputs)o.superseded=true;for(const i of s.ideas.filter(i=>i.originEvent||i.knownBy.includes('player')))i.superseded=true;for(const e of s.events.filter(e=>e.turns))e.superseded=true;result.artifact.evidenceIds=[]}
- // Automatic synthesis cannot silently resolve an unanswered human question.
- const unanswered=!p.pending&&p.waiting&&p.question;
- p.pending=false;p.dirty=false;p.waiting=result.needsInput||Boolean(unanswered);p.question=result.needsInput?result.question:unanswered||'';p.nextStep=result.nextStep;p.brief=result.brief;
- p.messages.push({id:randomUUID(),role:'assistant',text:result.reply,revision:p.revision});p.messages=p.messages.slice(-80);
+ const fromUser=p.pending;
+ const assessment=result.assessment||{action:result.nextStep,kind:'research',reason:'Continue useful work while preserving uncertainty.',question:result.needsInput?result.question:'',questionKind:result.needsInput?'clarification':'none',blockedAction:'',resolvesQuestion:fromUser&&!result.needsInput,assumptions:[]};
+ const action=applyAssessment(p,assessment,{fromUser,scopeChanged:result.contextChanged&&assessment.resolvesQuestion&&fromUser});
+ p.pending=false;p.dirty=false;p.brief=result.brief;
+ if(fromUser||p.messages.at(-1)?.text!==result.reply)p.messages.push({id:randomUUID(),role:'assistant',text:result.reply,revision:p.revision});p.messages=p.messages.slice(-80);
  if(p.artifact)p.artifactHistory.push(p.artifact);p.artifactHistory=p.artifactHistory.slice(-5);
  p.artifact={...result.artifact,version:(p.artifact?.version||0)+1,projectRevision:p.revision,stale:false};
  p.lastSynthesisCount=s.outputs.length+s.events.filter(e=>e.turns).length;
- const idea=s.ideas.find(i=>i.projectTask);if(idea){idea.text=p.brief.summary+'\nDesired outcome: '+p.brief.objective+'\nNext step: '+p.nextStep;idea.status='queued';idea.attempts=0;idea.superseded=false;idea.knownBy=[...p.knownBy]}else s.ideas.push({id:randomUUID(),text:p.brief.summary+'\nDesired outcome: '+p.brief.objective+'\nNext step: '+p.nextStep,projectTask:true,knownBy:[...p.knownBy],contributors:['player'],status:'queued',attempts:0,originEvent:null});
- // Park the primary task while a human decision is unresolved. Other ideas remain eligible.
- const primary=s.ideas.find(i=>i.projectTask);if(primary&&p.waiting)primary.status='awaiting context';
- let exploration=s.ideas.find(i=>i.projectExploration);
- if(p.waiting){
-  const text='Independent exploration for: '+p.brief.summary+'\nOpen human question (leave unresolved): '+p.question+'\nCompare public evidence, conditional options, or a different useful angle. Do not choose the missing human decision, infer internal facts, or wait for a reply. Suggested next action: '+p.nextStep;
-  if(exploration){if(exploration.text!==text){exploration.text=text;exploration.status='queued';exploration.attempts=0;}exploration.superseded=false;exploration.knownBy=[...p.knownBy];}
-  else s.ideas.push({id:randomUUID(),text,projectExploration:true,knownBy:[...p.knownBy],contributors:['player'],status:'queued',attempts:0,originEvent:null});
- }else if(exploration)exploration.superseded=true;
+ // One executable step on the SAME idea; questions never exclude the whole project.
+ for(const legacy of s.ideas.filter(i=>i.projectExploration||i.projectSeed))legacy.superseded=true;
+ const taskText=p.brief.summary+'\nDesired outcome: '+p.brief.objective+'\nAction: '+action.title+'\nAssumptions: '+assessment.assumptions.join('; ');
+ let idea=s.ideas.find(i=>i.projectTask);
+ if(!idea){idea={id:randomUUID(),projectTask:true,contributors:['player'],originEvent:null};s.ideas.push(idea);}
+ if(idea.actionId!==action.id){idea.attempts=0;idea.status='queued';}
+ Object.assign(idea,{text:taskText,actionId:action.id,knownBy:[...p.knownBy],superseded:false});
+ if(['completed','deferred'].includes(action.status))idea.status=action.status==='completed'?'researched':'deferred';
  s.agents.forEach(a=>{if(a.id==='player'||a.activity==='Reviewing context'||a.activity==='Waiting for you')a.activity='Deep work'});
 }
 export function experimentMarkdown(s){
  const p=s.project;if(!p)return '';const b=p.brief,a=p.artifact;
  const bullets=xs=>xs?.length?xs.map(x=>'- '+x).join('\n'):'Not established yet.';
  const evidence=s.outputs.filter(o=>!o.superseded&&a?.evidenceIds.includes(o.id));
- return [`# Living experiment brief`,a?`Draft ${a.version} · context revision ${a.projectRevision}${a.stale?' · New context or findings awaiting synthesis':''}`:'Preparing the first draft.',`## Problem`,b?.summary||p.inputs[0].text,`## Desired outcome`,b?.objective||p.inputs[0].intent||'Needs your input.',`## User-provided context (agent interpretation)`,bullets(b?.facts),`## Constraints`,bullets(b?.constraints),`## Hypotheses — not established facts`,bullets(b?.hypotheses),`## Evidence`,...evidence.map(o=>`${o.text}\n\n${o.sources.map(x=>`- ${x.title}: ${x.url}`).join('\n')}`),...(!evidence.length?['No current research evidence has been selected.']:[]),`## Proposed experiment`,a?.proposal||'Not proposed yet.',`## Test`,a?.test||'Not proposed yet.',`## Success criteria`,a?.successCriteria||'Needs agreement.',`## Unknowns`,bullets(b?.unknowns),`## Next step`,p.nextStep, ...(p.waiting?['## Open question for you -- work continues',p.question]:[])].join('\n\n');
+ return [`# Living experiment brief`,a?`Draft ${a.version} · context revision ${a.projectRevision}${a.stale?' · New context or findings awaiting synthesis':''}`:'Preparing the first draft.',`## Problem`,b?.summary||p.inputs[0].text,`## Desired outcome`,b?.objective||p.inputs[0].intent||'Needs your input.',`## User-provided context (agent interpretation)`,bullets(b?.facts),`## Constraints`,bullets(b?.constraints),`## Hypotheses — not established facts`,bullets(b?.hypotheses),`## Evidence`,...evidence.map(o=>`${o.text}\n\n${o.sources.map(x=>`- ${x.title}: ${x.url}`).join('\n')}`),...(!evidence.length?['No current research evidence has been selected.']:[]),`## Proposed experiment`,a?.proposal||'Not proposed yet.',`## Test`,a?.test||'Not proposed yet.',`## Success criteria`,a?.successCriteria||'Needs agreement.',`## Unknowns`,bullets(b?.unknowns),`## Next step`,p.nextStep,`## Action status`,...(p.actions||[]).slice(-6).map(x=>'- '+x.title+' ['+x.status+']'+(x.reason?' — '+x.reason:'')), ...(p.waiting?['## Open question for you -- work continues',p.question]:[])].join('\n\n');
 }

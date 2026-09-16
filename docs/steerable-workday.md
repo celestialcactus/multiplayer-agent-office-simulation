@@ -34,3 +34,8 @@ For a workplace demo, verify this live scenario: confirm a customer-onboarding p
 ## Updated steering semantics (September 16)
 
 Questions are nonblocking. The scheduler parks primary project work awaiting a human decision and continues with other ideas or a bounded independent exploration. The open question persists through automatic synthesis until a user response resolves it. This supersedes the earlier global waiting gate. Research and inference jobs remain serialized per office to preserve the existing budget and state model; parallel progress means alternating useful tasks while one idea awaits input, not simultaneous model calls. Manual pause and disconnect auto-pause still apply.
+
+
+## Action-level escalation supersedes blanket parking
+
+See [the implemented build plan](action-escalation.md). Questions no longer park primary ideas. A structured assessment names the ready research/discussion action and separately identifies any specific action dependent on an answer. The ledger preserves unresolved dependencies across unrelated steering and tracks attempts/completion. This supersedes the September 16 primary-task parking behavior above.

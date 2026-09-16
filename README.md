@@ -22,6 +22,8 @@ Live mode requires an AWS account credential profile, `OFFICE_MODE=bedrock`, `AW
 
 ## Start here
 
+- [Action-level escalation](docs/action-escalation.md): build plan, action tracking, selective human input, and future tool boundaries.
+
 - [Skippable animal customization](docs/onboarding.md): simpler setup, voxel wardrobe, and validation.
 
 - [Steerable workday](docs/steerable-workday.md): next MVP slice, behavior, validation, and deployment status.

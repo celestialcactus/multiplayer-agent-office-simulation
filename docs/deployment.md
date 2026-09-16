@@ -67,3 +67,10 @@ Set `CLOUD_BUILD=1` when running `node infra/deploy.mjs` to build the ARM64 runt
 This creates a uniquely named temporary CloudFormation stack with one ARM Small build project, an IAM role, and a log group. The role can read only the uploaded source archive, write the Agent Office ECR repository, and write its own build logs. Source packaging explicitly includes only Dockerfile, package manifests, and server/domain modules. It excludes local sessions, secrets, and unrelated projects. Build execution is limited to 15 minutes with a 5-minute queue timeout. Build compute is billable.
 
 On normal completion or handled failure, the helper removes the temporary stack and source archive. Build logs and status are saved under ignored `.local/`; the resulting image remains in ECR for deployment. If the deploy process is forcibly terminated, inspect `agent-office-build-*` stacks and CodeBuild jobs for cleanup. This is a deployment fallback, not a new continuously running application service.
+
+
+## Existing sessions after runtime updates
+
+AgentCore keeps existing microVM sessions on their original code even when DEFAULT points to a newer runtime version. A browser refresh alone does not upgrade that backend. Verify both a new office and an existing checkpoint after deployments that change scheduler behavior. See https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-troubleshooting.html .
+
+For a diagnosed stale office, back up its checkpoint privately, stop only its compute session with StopRuntimeSession, and let it recover from DynamoDB. Do not delete its AUTH or checkpoint records. If logs report ConditionalCheckFailedException and ownership remains stuck, investigate the META lease. After stopping old compute, a conditional owner/version handoff can fence old writers while preserving all chunks. Never clear a lease without identifying the specific office and preventing stale writes. September 16 recovery preserved an existing office and verified new research and exchanges after migration.

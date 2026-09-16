@@ -1,5 +1,10 @@
 # Changelog
 
+## Restore original animal style — 2026-09-16
+
+- Restored original box-built heads, ears, faces, and standing tails pending a new art reference.
+- Kept seated poses and chair clearance, with seated tails rebuilt from boxes to match.
+
 ## Faceted coworkers and chair clearance — 2026-09-16
 
 - Flat-shaded low-poly animal heads, tapered fox/cat ears, faceted muzzles and segmented tails.

@@ -5,10 +5,7 @@ export function createAvatar(profile={}){
  const p=appearance(profile),g=new THREE.Group(),materials=new Map();
  const fur={fox:'#dc873f',rabbit:'#d9d1c6',cat:'#8c99b0',dog:'#b67d52',otter:'#795345',frog:'#78af68'}[p.species];
  const cream=p.species==='frog'?'#d6e6a4':'#f2ddbd',dark='#253444';
- function box(x,y,z,w,h,d,color,parent=g){if(!materials.has(color))materials.set(color,new THREE.MeshStandardMaterial({color,roughness:.85,flatShading:true}));const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),materials.get(color));m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m}
- // Triangulated, flat-shaded volumes keep the animals angular at office scale.
- function facet(x,y,z,w,h,d,color,parent=g){const m=box(x,y,z,w,h,d,color,parent);m.geometry.dispose();m.geometry=new THREE.IcosahedronGeometry(1,0);m.scale.set(w/1.7,h/1.7,d/1.7);return m}
- function taper(x,y,z,w,h,d,color){const m=box(x,y,z,w,h,d,color);m.geometry.dispose();m.geometry=new THREE.CylinderGeometry(0,1,1,4,1);m.scale.set(w/2,h,d/2);m.rotation.y=Math.PI/4;return m}
+ function box(x,y,z,w,h,d,color,parent=g){if(!materials.has(color))materials.set(color,new THREE.MeshStandardMaterial({color,roughness:.85}));const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),materials.get(color));m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m}
  const standing=new THREE.Group(),seated=new THREE.Group();g.add(standing,seated);seated.visible=false;
  const pants=p.outfit==='suit'?'#354653':'#425d73';
  const legs=[box(-.15,.36,0,.23,.47,.3,pants,standing),box(.15,.36,0,.23,.47,.3,pants,standing)];
@@ -21,26 +18,27 @@ export function createAvatar(profile={}){
  if(p.outfit==='polo'){for(const x of [-.1,.1]){const collar=box(x,1.15,.235,.14,.09,.055,cream);collar.rotation.z=x<0?.25:-.25}box(0,1.04,.223,.025,.09,.025,cream)}
  if(p.outfit==='casual'){box(0,.91,.218,.027,.48,.025,cream);box(.17,1.01,.223,.12,.12,.025,cream);for(const y of [.76,.92,1.07])box(0,y,.242,.035,.035,.02,dark)}
  // All animals are upright coworkers; anatomy distinguishes them without changing behavior.
- facet(0,1.49,0,.72,.64,.61,fur);
- const ear=(x,y,w,h,color=fur)=>facet(x,y,-.01,w,h,.23,color);
+ box(0,1.49,0,.66,.56,.52,fur);
+ const ear=(x,y,w,h,color=fur)=>box(x,y,-.01,w,h,.23,color);
  if(p.species==='rabbit'){for(const x of [-.21,.21]){ear(x,2.03,.2,.63);box(x,2.05,.115,.1,.43,.035,'#d79d9d')}}
- if(p.species==='fox'||p.species==='cat'){for(const x of [-.24,.24]){taper(x,1.87,-.01,.36,.48,.3,fur);taper(x,1.86,.095,.19,.3,.035,p.species==='fox'?dark:'#d79d9d')}}
+ if(p.species==='fox'||p.species==='cat'){for(const x of [-.24,.24]){ear(x,1.85,.21,.3);ear(x,2,.12,.09);box(x,1.85,.12,.1,.18,.025,p.species==='fox'?dark:'#d79d9d')}}
  if(p.species==='dog'){for(const x of [-.38,.38])ear(x,1.46,.19,.57,'#694a3c')}
  if(p.species==='otter'){for(const x of [-.35,.35])ear(x,1.72,.19,.2)}
- if(p.species==='frog'){for(const x of [-.23,.23]){facet(x,1.82,.08,.29,.29,.32,fur);box(x,1.83,.232,.16,.15,.035,'#fff8df');box(x,1.83,.258,.07,.1,.025,dark)}facet(0,1.36,.28,.55,.22,.17,cream);box(0,1.41,.345,.3,.025,.02,dark)}
- else{const muzzleDepth=p.species==='fox'||p.species==='dog'?.26:.12;facet(0,1.36,.29,.47,.3,muzzleDepth+.16,cream);facet(0,1.4,.34+muzzleDepth/2,.13,.095,.09,dark);for(const x of [-.19,.19]){box(x,1.57,.275,.105,.11,.04,dark);box(x-.018,1.6,.3,.035,.035,.015,'#fff8ed')}}
+ if(p.species==='frog'){for(const x of [-.23,.23]){box(x,1.82,.08,.25,.25,.28,fur);box(x,1.83,.232,.16,.15,.035,'#fff8df');box(x,1.83,.258,.07,.1,.025,dark)}box(0,1.36,.28,.5,.17,.1,cream);box(0,1.41,.345,.3,.025,.02,dark)}
+ else{const muzzleDepth=p.species==='fox'||p.species==='dog'?.26:.12;box(0,1.35,.28,.42,.22,muzzleDepth,cream);box(0,1.43,.3+muzzleDepth/2,.12,.075,.05,dark);for(const x of [-.19,.19]){box(x,1.57,.275,.105,.11,.04,dark);box(x-.018,1.6,.3,.035,.035,.015,'#fff8ed')}}
  const walkingTail=new THREE.Group(),sittingTail=new THREE.Group();g.add(walkingTail,sittingTail);sittingTail.visible=false;
- function tailSegment(parent,from,to,r1,r2,color){const a=new THREE.Vector3(...from),b=new THREE.Vector3(...to),delta=b.clone().sub(a);const m=box(0,0,0,1,1,1,color,parent);m.geometry.dispose();m.geometry=new THREE.CylinderGeometry(r2,r1,delta.length(),5,1);m.position.copy(a.add(b).multiplyScalar(.5));m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),delta.normalize());}
- if(p.species==='rabbit'){facet(0,.69,-.31,.26,.25,.26,cream,walkingTail);facet(0,.71,-.31,.26,.25,.26,cream,sittingTail)}
+ if(p.species==='fox'){const tail=box(.16,.64,-.49,.32,.38,.68,fur,walkingTail);tail.rotation.x=-.35;box(.16,.78,-.88,.31,.3,.3,cream,walkingTail)}
+ if(p.species==='cat'){const tail=box(.26,.57,-.38,.14,.7,.15,fur,walkingTail);tail.rotation.x=-.45;box(.26,.92,-.55,.14,.14,.15,cream,walkingTail)}
+ if(p.species==='otter')box(0,.28,-.47,.27,.18,.7,fur,walkingTail);
+ if(p.species==='dog'){const tail=box(0,.64,-.37,.14,.4,.17,fur,walkingTail);tail.rotation.x=-.7}
+ if(p.species==='rabbit')box(0,.52,-.3,.24,.24,.23,cream,walkingTail);
+ // Preserve chair clearance with a box-built seated tail in the original style.
+ if(p.species==='rabbit')box(0,.71,-.31,.24,.24,.23,cream,sittingTail);
  else if(p.species!=='frog'){
-  const thick=p.species==='fox'?.22:p.species==='otter'?.14:.075;
-  const long=p.species==='fox'||p.species==='otter';
-  tailSegment(walkingTail,[0,.7,-.18],[.16,.65,-.65],.08,thick,fur);
-  tailSegment(walkingTail,[.16,.65,-.65],[.2,long?.82:1,-1],thick,.025,p.species==='fox'?cream:fur);
-  // Route below the open chair back, then curl outside its right edge.
-  tailSegment(sittingTail,[0,.7,-.18],[.72,.72,-.19],.065,.09,fur);
-  tailSegment(sittingTail,[.72,.72,-.19],[.93,.77,-.53],.09,thick,fur);
-  tailSegment(sittingTail,[.93,.77,-.53],[.96,1.05,-.79],thick,.025,p.species==='fox'?cream:fur);
+  const width=p.species==='fox'?.32:p.species==='otter'?.24:.14;
+  box(.36,.71,-.19,.72,.13,.13,fur,sittingTail);
+  box(.79,.73,-.36,width,.2,.46,fur,sittingTail);
+  box(.79,.86,-.64,width,.28,.22,p.species==='fox'?cream:fur,sittingTail);
  }
  function setSeated(value){standing.visible=!value;walkingTail.visible=!value;seated.visible=value;sittingTail.visible=value;}
  const hatBox=(x,y,...rest)=>box(x,y+(p.species==='frog'?.22:0),...rest);

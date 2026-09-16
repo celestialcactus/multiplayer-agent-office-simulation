@@ -1,5 +1,12 @@
 # Changelog
 
+## Faceted coworkers and chair clearance — 2026-09-16
+
+- Flat-shaded low-poly animal heads, tapered fox/cat ears, faceted muzzles and segmented tails.
+- Seated legs and side-curled tails at desks and meetings; meeting participants face the table.
+- Open chair backs leave clearance for tails. Geometry regression checks cover all six animals against seats, backs, and supports.
+- Local browser visual check and production build passed; frontend-only AWS update, with no inference changes.
+
 ## Animal customization and lighter onboarding â€” 2026-09-16
 
 - Optional, skippable animal, wardrobe, and personality segments with one final project prompt.

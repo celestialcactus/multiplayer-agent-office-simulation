@@ -1,6 +1,6 @@
 # Steerable workday
 
-Implemented locally September 15, 2026. Hosted deployment and live model quality validation are pending renewed AWS authentication. This slice changes the application, not the AWS resource topology.
+Implemented September 15 and deployed September 16, 2026 at https://d88v6bepeim92.cloudfront.net. The application topology is unchanged. A temporary ARM CodeBuild job built the runtime because local Docker Desktop was failing; the build stack and source archive were removed afterward.
 
 ## Interaction
 
@@ -21,7 +21,9 @@ The brief has version and context-revision labels, selected evidence, experiment
 - Automated coverage includes correction invalidation, retained evidence for questions, idempotent messages, paused replies, checkpoint recovery, buffered-result invalidation, draft versions, private context boundaries, and disconnect auto-pause.
 - Local HTTP smoke passed a full scripted workday, including initial confirmation, meeting, encounter, research, report, and cleanup.
 - Browser inspection verified initial confirmation, a correction while paused, rendered brief, and persisted conversation.
-- Scripted demo responses demonstrate mechanics only. Real model interpretation, question quality, and research grounding need a live evaluation after deployment. Valid references do not prove a claim is supported.
+- Hosted Bedrock steering smoke passed using four calls: initial confirmation, employee-to-customer scope correction, a human-context question, no autonomous calls or clock progression while waiting, replies while paused, supplied context reflected in the draft, an evidence challenge, and report export. The synthetic office was deleted. CloudFront serves the new frontend asset.
+- A second hosted test passed invite/auth/origin checks, live meeting, one sourced research output, refresh continuity, pause, finish, report, and cleanup using 13 calls.
+- Live quality remains uneven: an assistant reply asked several questions despite the one-question instruction and repeated an already stated accessibility priority. The final brief preserved the customer segment and identity-check constraint, but still needs human review for specificity and research grounding. Passing workflow checks is not evidence that the conversation is pitch-ready. Valid references do not prove a claim is supported.
 - A context-changing correction conservatively retires prior derived findings; selective relevance reassessment is deferred. All guidance/synthesis uses the existing call budget. The pilot supports 39 user messages per day, eight-hour sessions, one project, and one brief. No multiplayer or cross-session memory is added.
 
 For a workplace demo, verify this live scenario: confirm a customer-onboarding problem; redirect to accessibility; add a non-public constraint; challenge an unsupported conclusion; supply a missing human decision; request an experiment brief. Confirm that current findings survive challenges, obsolete findings leave the active brief, waiting consumes no autonomous calls, and the final draft identifies assumptions and evidence honestly.

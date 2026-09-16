@@ -7,7 +7,7 @@
 - Versioned living experiment brief, participant-scoped synthesis, task narration, and correction invalidation.
 - Optional setup facts, constraints, and unknowns; updated API smoke flow and steering regression coverage.
 
-Local validation complete; AWS deployment and live quality validation pending. The Version 1 tag remains unchanged. See [slice details](docs/steerable-workday.md).
+Deployed September 16, 2026. All 32 regression tests pass; hosted steering smoke passed with four Bedrock calls. Conversation quality limitations are recorded in [slice details](docs/steerable-workday.md). Optional temporary AWS builds avoid reliance on local Docker Desktop. The Version 1 tag remains unchanged.
 
 ## Version 1 — 2026-09-15
 

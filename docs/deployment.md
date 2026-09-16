@@ -60,3 +60,10 @@ Deployment compatibility: this account cannot reserve five Lambda executions whi
 ## Web search and learning update
 
 The stack now includes SearchGateway, SearchTarget (AWS managed web-search connector), and a scoped SearchRole. RuntimeRole can invoke this IAM-protected gateway, and WEB_SEARCH_URL is supplied to the runtime. See [learning-loop.md](learning-loop.md) for bounded memory, synthesis, evidence review, test evidence, and remaining quality limits. Nineteen contract tests pass.
+## Optional cloud image build
+
+Set `CLOUD_BUILD=1` when running `node infra/deploy.mjs` to build the ARM64 runtime in AWS CodeBuild instead of Docker Desktop. The same AWS profile, region, model ID, and model-resource ARN settings apply. `AWS_CLI_PATH` can select the installed AWS CLI executable.
+
+This creates a uniquely named temporary CloudFormation stack with one ARM Small build project, an IAM role, and a log group. The role can read only the uploaded source archive, write the Agent Office ECR repository, and write its own build logs. Source packaging explicitly includes only Dockerfile, package manifests, and server/domain modules. It excludes local sessions, secrets, and unrelated projects. Build execution is limited to 15 minutes with a 5-minute queue timeout. Build compute is billable.
+
+On normal completion or handled failure, the helper removes the temporary stack and source archive. Build logs and status are saved under ignored `.local/`; the resulting image remains in ECR for deployment. If the deploy process is forcibly terminated, inspect `agent-office-build-*` stacks and CodeBuild jobs for cleanup. This is a deployment fallback, not a new continuously running application service.

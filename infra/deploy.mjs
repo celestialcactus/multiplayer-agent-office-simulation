@@ -3,6 +3,7 @@ import {STSClient,GetCallerIdentityCommand} from '@aws-sdk/client-sts';
 import {CloudFormationClient,DeleteStackCommand,waitUntilStackDeleteComplete,DescribeStacksCommand,CreateStackCommand,UpdateStackCommand,waitUntilStackCreateComplete,waitUntilStackUpdateComplete,ValidateTemplateCommand} from '@aws-sdk/client-cloudformation';
 import {S3Client,PutObjectCommand} from '@aws-sdk/client-s3';
 import {ECRClient,GetAuthorizationTokenCommand} from '@aws-sdk/client-ecr';
+import {cloudBuild} from './cloud-build.mjs';
 const profile=process.env.AWS_PROFILE,region=process.env.AWS_REGION,modelId=process.env.BEDROCK_MODEL_ID,arns=process.env.MODEL_RESOURCE_ARNS;
 if(!profile||!region||!modelId||!arns)throw new Error('Set AWS_PROFILE, AWS_REGION, BEDROCK_MODEL_ID, and MODEL_RESOURCE_ARNS before deployment.');
 const cfg={profile,region};const identity=await new STSClient(cfg).send(new GetCallerIdentityCommand({}));console.log(`Deploying Agent Office to account ${identity.Account}, region ${region}.`);
@@ -13,8 +14,9 @@ const bootstrap={AWSTemplateFormatVersion:'2010-09-09',Resources:{Artifacts:{Typ
 const boot=await stack('agent-office-bootstrap',bootstrap);
 run(process.execPath,['node_modules/vite/bin/vite.js','build']);run(process.execPath,['scripts/package-gateway.mjs']);run(process.execPath,['infra/generate.mjs']);
 const zip=await readFile('infra/generated/gateway.zip');const digest=createHash('sha256').update(zip).digest('hex').slice(0,16),key=`gateway/${digest}.zip`;await s3.send(new PutObjectCommand({Bucket:boot.Bucket,Key:key,Body:zip}));
-const auth=(await ecr.send(new GetAuthorizationTokenCommand({}))).authorizationData[0];const decoded=Buffer.from(auth.authorizationToken,'base64').toString();run('docker',['login','--username','AWS','--password-stdin',auth.proxyEndpoint],decoded.slice(decoded.indexOf(':')+1));
-const tag=`${boot.Repository}:${Date.now()}`;run('docker',['build','--platform','linux/arm64','-t',tag,'.']);run('docker',['push',tag]);
+const tag=`${boot.Repository}:${Date.now()}`;
+if(process.env.CLOUD_BUILD==='1')await cloudBuild({cf,s3,boot,tag,account:identity.Account,region,profile});
+else{const auth=(await ecr.send(new GetAuthorizationTokenCommand({}))).authorizationData[0];const decoded=Buffer.from(auth.authorizationToken,'base64').toString();run('docker',['login','--username','AWS','--password-stdin',auth.proxyEndpoint],decoded.slice(decoded.indexOf(':')+1));run('docker',['build','--platform','linux/arm64','-t',tag,'.']);run('docker',['push',tag]);}
 await mkdir('.local',{recursive:true});let secrets;try{secrets=JSON.parse(await readFile('.local/deployment-secrets.json','utf8'))}catch(e){if(e.code!=='ENOENT')throw e;secrets={invite:randomBytes(12).toString('base64url'),origin:randomBytes(32).toString('hex')};await writeFile('.local/deployment-secrets.json',JSON.stringify(secrets))}
 const params={ImageUri:tag,GatewayBucket:boot.Bucket,GatewayKey:key,ModelId:modelId,ModelResourceArns:arns,InviteHash:createHash('sha256').update(secrets.invite).digest('hex'),OriginSecret:secrets.origin};
 const outputs=await stack('agent-office-mvp',JSON.parse(await readFile('infra/generated/stack.json','utf8')),Object.entries(params).map(([ParameterKey,ParameterValue])=>({ParameterKey,ParameterValue})));

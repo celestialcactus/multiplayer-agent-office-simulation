@@ -1,5 +1,13 @@
 # Changelog
 
+## Conversation and idea readability - 2026-09-16
+
+- Dedicated keyboard-accessible conversation scrolling preserves reading position during polling and follows new messages only when already at the bottom.
+- Jump to latest returns to recent messages; the composer stays outside the message history.
+- Ideas show compact, locally derived title excerpts above full descriptions, without extra inference.
+- Frontend-only change; existing office sessions can use it after refresh.
+
+
 ## Action-level escalation — 2026-09-16
 
 - Optional information no longer parks an idea. Research and discussion continue on a concrete next action.

@@ -5,9 +5,18 @@ import {guidance} from '../server/guidance.mjs';
 import {Coordinator} from '../server/coordinator.mjs';import {MemoryRepository} from '../server/repository.mjs';import {Inference} from '../server/inference.mjs';
 const profile={name:'Owner',role:'Product lead',persona:'Pragmatic',interests:'Employee onboarding',intent:'Improve completion',privateNotes:'PRIVATE-CANARY'};
 function reply(extra={}){return {contextChanged:false,reply:'I understand the change.',needsInput:false,question:'',nextStep:'Test customer signup accessibility.',brief:{summary:'Customer onboarding',objective:'Improve completion',facts:['Customer signup is the scope.'],constraints:['Keep identity checks.'],hypotheses:['Clear labels may help.'],unknowns:[]},artifact:{proposal:'Compare a signup prototype.',test:'Observe keyboard-only completion.',successCriteria:'Agree on a completion target.',evidenceIds:[]},...extra}}
-test('initial confirmation and human knowledge gaps freeze time without starting research',()=>{
- const s=newOffice(profile,{now:0});const j=tick(s,1000);assert.equal(j.kind,'guidance');completeJob(s,j,reply({needsInput:true,question:'Who is the audience?'}));const minute=s.minute;assert.equal(tick(s,10000),null);assert.equal(s.minute,minute);assert.equal(s.project.waiting,true);
- applyCommand(s,{type:'message',commandId:'m',text:'Customers, not employees.'},10001);assert.equal(tick(s,11000).kind,'guidance');
+test('open human questions allow research, encounters, meetings and steering',()=>{
+ for(const kind of ['research','encounter','meeting']){
+  const s=newOffice(profile,{now:0});const j=tick(s,1000);completeJob(s,j,reply({needsInput:true,question:'Who is the audience?'}));
+  if(kind==='encounter')applyCommand(s,{type:'coffee',commandId:'coffee'},1001);
+  if(kind==='meeting')applyCommand(s,{type:'meeting',commandId:'meeting',participants:['designer'],delay:0},1001);
+  const next=tick(s,10000);assert.equal(next.kind,kind);if(kind==='research'){assert(next.candidates.every(id=>!s.ideas.find(i=>i.id===id).projectTask&&!s.ideas.find(i=>i.id===id).projectSeed));assert(next.candidates.some(id=>s.ideas.find(i=>i.id===id).projectExploration));}assert(s.minute>0);assert.equal(s.project.waiting,true);
+  applyCommand(s,{type:'message',commandId:'m',text:'Customers, not employees.'},10001);const guided=tick(s,11000);assert.equal(guided.kind,'guidance');completeJob(s,guided,reply());assert.equal(s.project.waiting,false);
+ }
+});
+test('automatic synthesis preserves unanswered questions without pausing; manual pause still freezes time',()=>{
+ const s=newOffice(profile,{now:0});applyGuidance(s,reply({needsInput:true,question:'Who is the audience?'}));applyGuidance(s,reply());assert.equal(s.project.question,'Who is the audience?');assert.equal(s.project.waiting,true);
+ applyCommand(s,{type:'pause',commandId:'p'},1000);tick(s,10000);assert.equal(s.minute,0);assert.equal(s.job,null);
 });
 test('corrections invalidate in-flight results and retire stale memory on interpretation',()=>{
  const s=newOffice(profile,{now:0});s.project.pending=false;
@@ -56,8 +65,8 @@ test('routine synthesis never reapplies an earlier correction',async()=>{
  const s=newOffice(profile);s.project.pending=false;s.project.messages.push({role:'user',text:'Customer onboarding, not employee onboarding.'});
  const r=await guidance({mode:'bedrock',think:async()=>JSON.stringify(reply({contextChanged:true}))},s,{},async()=>{});assert.equal(r.contextChanged,false);
 });
-test('a human-decision gate overrides a drafting response that incorrectly continues',async()=>{
+test('question extraction preserves independent work without a scheduler gate',async()=>{
  const s=newOffice(profile);applyCommand(s,{type:'message',commandId:'human',text:'Ask me which customer segment before choosing participants.'});let calls=0;
- const r=await guidance({mode:'bedrock',think:async()=>++calls===1?JSON.stringify({needsInput:true,question:'Which customer segment can we recruit?'}):JSON.stringify(reply())},s,{},async()=>{});
- assert.equal(r.needsInput,true);assert.equal(r.question,'Which customer segment can we recruit?');assert(r.reply.includes(r.question));assert.equal(calls,2);
+ const r=await guidance({mode:'bedrock',think:async(system)=>{calls++;if(calls===1)return JSON.stringify({question:'Which customer segment can we recruit?'});assert(system.includes('never stop the workday'));return JSON.stringify(reply({needsInput:false,question:'',nextStep:'Compare public accessibility evidence without choosing participants.'}));}},s,{},async()=>{});
+ assert.equal(r.needsInput,true);assert(r.nextStep.includes('without choosing'));assert.equal(calls,2);
 });

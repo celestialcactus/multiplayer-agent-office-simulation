@@ -16,7 +16,7 @@ export function validateProfile(p){
 export function newOffice(profile,{id=randomUUID(),mode='demo',now=Date.now(),callLimit=60}={}){
  const p=validateProfile(profile);const agents=[{id:'player',...p},...structuredClone(NPCS)].map(a=>({...a,activity:'Deep work',stalls:0,taskId:null}));
  const s={id,mode,createdAt:now,expiresAt:now+8*60*60*1000,status:'running',minute:0,speed:4,lastTick:now,lastSeen:now,lastActivity:0,nextEncounter:16,revision:0,generation:0,agents,ideas:[],events:[],outputs:[],meetings:[],commands:[],calls:0,callLimit,job:null,busy:false,researchCursor:0,project:createProject(p)};
- agents.forEach(a=>s.ideas.push({id:randomUUID(),text:(a.interests||a.interest)+(a.intent?'\nDesired outcome and constraints: '+a.intent:''),knownBy:[a.id],contributors:[a.id],originEvent:null,status:'queued',attempts:0}));event(s,'Arrival','The office is open',`${p.name} joins Maya, Ellis, Jules, and Theo. ${mode==='demo'?'Scripted demo: exchanges and research examples are not live inference.':'Live inference enabled. Research uses configured public sources; each finding needs review.'}`);return s;
+ agents.forEach(a=>s.ideas.push({id:randomUUID(),text:(a.interests||a.interest)+(a.intent?'\nDesired outcome and constraints: '+a.intent:''),knownBy:[a.id],contributors:[a.id],projectSeed:a.id==='player',originEvent:null,status:'queued',attempts:0}));event(s,'Arrival','The office is open',`${p.name} joins Maya, Ellis, Jules, and Theo. ${mode==='demo'?'Scripted demo: exchanges and research examples are not live inference.':'Live inference enabled. Research uses configured public sources; each finding needs review.'}`);return s;
 }
 export function event(s,kind,title,text,extra={}){const e={id:randomUUID(),minute:s.minute,kind,title,text,...extra};s.events.push(e);s.events=s.events.slice(-100);return e}
 export function researchMemory(s,agentId){
@@ -57,7 +57,6 @@ export function tick(s,now=Date.now(),random=Math.random){
   return null;
  }
  if(s.project?.pending&&!s.job&&s.calls<s.callLimit&&['running','paused'].includes(s.status)){const job={id:randomUUID(),kind:'guidance',participants:['player'],generation:s.generation,startedAt:now,projectRevision:s.project.revision};s.job=job;s.busy=true;s.lastTick=now;return structuredClone(job)}
- if(s.project?.waiting&&s.status==='running'&&now-s.lastSeen<=120000){s.lastTick=now;return null}
  if(s.status!=='running'){s.lastTick=now;return null}
  if(now-s.lastSeen>120000){s.status='paused';s.lastTick=now;event(s,'Pause','Paused while you are away','The office keeps its context. Resume when you return.');return null}
  s.minute=Math.min(480,s.minute+Math.min(5,(now-s.lastTick)/1000)*s.speed/2);s.lastTick=now;
@@ -69,7 +68,7 @@ export function tick(s,now=Date.now(),random=Math.random){
  else if(meeting){meeting.status='active';meeting.participants.forEach(id=>s.agents.find(a=>a.id===id).activity='Meeting');job={kind:'meeting',participants:meeting.participants,meetingId:meeting.id}}
  else if(s.meetings.some(m=>m.status==='discussed'&&m.end>s.minute))return null;
  else if(s.minute>=s.nextEncounter){const p=s.events.filter(e=>e.kind==='Encounter').length%3===2?NPCS[Math.floor(random()*NPCS.length)].id:'player';const candidates=s.agents.filter(a=>a.id!==p);const q=candidates[Math.floor(random()*candidates.length)].id;job={kind:'encounter',participants:[p,q]};job.participants.forEach(id=>s.agents.find(a=>a.id===id).activity='Encounter');s.nextEncounter=s.minute+30+random()*25}
- else if(s.minute-s.lastActivity>=10){const a=s.agents[s.researchCursor++%s.agents.length];const ideas=s.ideas.filter(i=>!i.superseded&&i.knownBy.includes(a.id)&&i.status!=='researched'&&i.attempts<2);if(!ideas.length){a.activity='Break';s.lastActivity=s.minute;return null}job={kind:'research',participants:[a.id],candidates:ideas.slice(-6).map(i=>i.id)};a.activity='Deep work'}
+ else if(s.minute-s.lastActivity>=10){const a=s.agents[s.researchCursor++%s.agents.length];const ideas=s.ideas.filter(i=>!i.superseded&&i.knownBy.includes(a.id)&&!(s.project?.waiting&&(i.projectTask||i.projectSeed))&&i.status!=='researched'&&i.attempts<2);if(!ideas.length){a.activity='Break';s.lastActivity=s.minute;return null}job={kind:'research',participants:[a.id],candidates:ideas.slice(-6).map(i=>i.id)};a.activity='Deep work'}
  if(!job)return null;job={...job,projectRevision:s.project?.revision,id:randomUUID(),generation:s.generation,startedAt:now};s.job=job;s.busy=true;s.lastActivity=s.minute;event(s,'Narration',job.kind==='guidance'?'Updating the experiment brief':job.kind==='research'?'Investigating an open question':'Comparing perspectives',job.kind==='research'?'I’m choosing evidence that could change the next decision.':job.kind==='guidance'?'I’m connecting the latest findings to the current brief and next action.':'I’m looking for a useful connection, disagreement, or missing context.');return structuredClone(job);
 }
 export function completeJob(s,job,result){

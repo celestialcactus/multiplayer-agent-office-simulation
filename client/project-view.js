@@ -7,7 +7,7 @@ export function conversationView(state,draft){
  return '<div class="agent-thread" aria-label="Conversation with your agent">'+
  (p.messages.length?p.messages.map(m=>'<article class="chat-message '+m.role+'"><strong>'+esc(m.role==='user'?'You':state.agents[0].name)+'</strong><div>'+renderMarkdown(m.text)+'</div></article>').join(''):'<p class="empty">Your agent is reviewing the starting brief. You can add context now.</p>')+
  (p.pending?'<p class="field-note" role="status">Your agent is updating its understanding…</p>':'')+
- '</div>'+(p.waiting?'<div class="context-question"><strong>Your context is needed</strong><p>'+esc(p.question)+'</p></div>':'')+
+ '</div>'+(p.waiting?'<div class="context-question"><strong>Open question for you</strong><p>'+esc(p.question)+'</p><p class="field-note">Reply when ready to steer the work. This question does not pause the office.</p></div>':'')+
  '<form id="agent-message-form"><label for="agent-message">Talk to your agent</label><textarea id="agent-message" maxlength="2000" required '+(disabled?'disabled':'')+' placeholder="Add context, correct an assumption, ask a question, or change what we should work on.">'+esc(draft)+'</textarea><p class="field-note">Project context here can inform coworker exchanges and research. Keep personal information in your private profile notes.</p><button class="btn primary full" '+(disabled?'disabled':'')+'>Send message</button></form>';
 }
 export function briefView(state){

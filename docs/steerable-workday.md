@@ -29,3 +29,8 @@ The brief has version and context-revision labels, selected evidence, experiment
 - A context-changing correction conservatively retires prior derived findings; selective relevance reassessment is deferred. All guidance/synthesis uses the existing call budget. The pilot supports 39 user messages per day, eight-hour sessions, one project, and one brief. No multiplayer or cross-session memory is added.
 
 For a workplace demo, verify this live scenario: confirm a customer-onboarding problem; redirect to accessibility; add a non-public constraint; challenge an unsupported conclusion; supply a missing human decision; request an experiment brief. Confirm that current findings survive challenges, obsolete findings leave the active brief, waiting consumes no autonomous calls, and the final draft identifies assumptions and evidence honestly.
+
+
+## Updated steering semantics (September 16)
+
+Questions are nonblocking. The scheduler parks primary project work awaiting a human decision and continues with other ideas or a bounded independent exploration. The open question persists through automatic synthesis until a user response resolves it. This supersedes the earlier global waiting gate. Research and inference jobs remain serialized per office to preserve the existing budget and state model; parallel progress means alternating useful tasks while one idea awaits input, not simultaneous model calls. Manual pause and disconnect auto-pause still apply.

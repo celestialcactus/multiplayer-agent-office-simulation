@@ -1,5 +1,6 @@
 import {readFile,writeFile} from 'node:fs/promises';
 import assert from 'node:assert/strict';
+import {confirmBrief} from './confirm-brief.mjs';
 const deployment=JSON.parse(await readFile('.local/deployment.json','utf8'));
 const secrets=JSON.parse(await readFile('.local/deployment-secrets.json','utf8'));
 const base=deployment.PlayUrl;let cookie;
@@ -17,6 +18,7 @@ try{
  assert.equal((await request('session',{auth:false})).r.status,401);
  const forged=await request('session/commands',{method:'POST',origin:'https://invalid.example',body:{type:'pause',commandId:'forged'}});assert.equal(forged.r.status,403);
  assert.equal((await command('meeting',{participants:['designer'],delay:0})).r.status,200);
+ await confirmBrief(async()=>(await request('session')).json,command);
  let s;for(let i=0;i<90;i++){
   const current=await request('session');assert.equal(current.r.status,200,JSON.stringify(current.json));s=current.json;
   if(s.events.some(e=>e.kind==='Meeting'&&e.turns?.length)&&s.outputs.length)break;

@@ -1,0 +1,27 @@
+# Steerable workday
+
+Implemented locally September 15, 2026. Hosted deployment and live model quality validation are pending renewed AWS authentication. This slice changes the application, not the AWS resource topology.
+
+## Interaction
+
+The user talks naturally in **Your agent**. There are no clarification/redirect/challenge command buttons. A budgeted Bedrock call interprets the message, revises the working brief, answers the user, and selects the next step. The initial review requests confirmation. Missing human intent or internal organizational facts should trigger one focused question and suspend autonomous work until the user responds. Chat continues while the workday is manually paused without resuming the clock.
+
+The setup form optionally captures constraints, known facts, and open questions. Messages and these project fields can inform coworker exchanges and public research; raw personal profile notes remain excluded. This is not a comprehensive confidential-project permissions system.
+
+## Memory and synthesis
+
+Every accepted user message increments the context revision and invalidates unfinished work. A model-classified correction retires prior derived research and exchange memories from active prompts, retaining them in the audit trail. Evidence questions and formatting requests preserve existing findings. Routine synthesis cannot reapply a past correction. Already dispatched inference may still incur its reserved cost even when its result is discarded.
+
+Synthesis runs after the player's research or an exchange involving the player. It receives the player's own research and research references actually delivered through conversations, plus participant-visible exchanges. An NPC knowing the project does not grant access to that NPC's unshared research. The model distinguishes user facts, hypotheses, evidence, constraints, and unknowns in one living experiment brief. Source IDs must reference supplied notes; schema failure permits one budgeted repair attempt.
+
+The brief has version and context-revision labels, selected evidence, experiment, test, success criteria, and next step. The last five previous drafts remain in the session checkpoint; the UI shows and downloads the current draft. Narration presents task status, next steps, and questions, rather than internal reasoning traces.
+
+## Validation and limits
+
+- Automated coverage includes correction invalidation, retained evidence for questions, idempotent messages, paused replies, checkpoint recovery, buffered-result invalidation, draft versions, private context boundaries, and disconnect auto-pause.
+- Local HTTP smoke passed a full scripted workday, including initial confirmation, meeting, encounter, research, report, and cleanup.
+- Browser inspection verified initial confirmation, a correction while paused, rendered brief, and persisted conversation.
+- Scripted demo responses demonstrate mechanics only. Real model interpretation, question quality, and research grounding need a live evaluation after deployment. Valid references do not prove a claim is supported.
+- A context-changing correction conservatively retires prior derived findings; selective relevance reassessment is deferred. All guidance/synthesis uses the existing call budget. The pilot supports 39 user messages per day, eight-hour sessions, one project, and one brief. No multiplayer or cross-session memory is added.
+
+For a workplace demo, verify this live scenario: confirm a customer-onboarding problem; redirect to accessibility; add a non-public constraint; challenge an unsupported conclusion; supply a missing human decision; request an experiment brief. Confirm that current findings survive challenges, obsolete findings leave the active brief, waiting consumes no autonomous calls, and the final draft identifies assumptions and evidence honestly.

@@ -22,6 +22,8 @@ Live mode requires an AWS account credential profile, `OFFICE_MODE=bedrock`, `AW
 
 ## Start here
 
+- [Steerable workday](docs/steerable-workday.md): next MVP slice, behavior, validation, and deployment status.
+
 - [Connect real agent inference](docs/live-setup.md): account/model checks and a separate live launcher on port 5189.
 
 - [Product concept and MVP scope](docs/concept.md)

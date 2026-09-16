@@ -1,5 +1,6 @@
 import {readFile,writeFile} from 'node:fs/promises';
 import assert from 'node:assert/strict';
+import {confirmBrief} from './confirm-brief.mjs';
 const {PlayUrl:base}=JSON.parse(await readFile('.local/deployment.json'));
 const {invite}=JSON.parse(await readFile('.local/deployment-secrets.json'));let cookie;
 async function request(path,body,method=body?'POST':'GET'){
@@ -10,6 +11,7 @@ const command=(type,extra={})=>request('session/commands',{type,commandId:crypto
 async function until(predicate){for(let n=0;n<90;n++){const s=await request('session');if(predicate(s))return s;if(s.calls>=24)throw new Error('Learning test reached 24-call cutoff.');if(n%10===0)console.log(`Learning test: ${s.calls} calls, ${s.outputs.length} notes`);await new Promise(r=>setTimeout(r,2000))}throw new Error('Learning test timed out.')}
 try{
  await request('sessions',{invite,name:'Learning validation',role:'Product lead',persona:'Specific, evidence focused, willing to revise assumptions',interests:'Improve keyboard-only signup accessibility using W3C guidance on form labels and focus order.',intent:'Reduce keyboard-only signup abandonment while retaining identity checks. Choose a measurable first experiment.',privateNotes:'LEARNING-PRIVATE-CANARY'});
+ await confirmBrief(()=>request('session'),command);
  let s=await until(s=>s.outputs.some(o=>o.sources.some(src=>src.provider==='aws-web-index')));const note=s.outputs.find(o=>o.sources.some(src=>src.provider==='aws-web-index'));
  console.log(`Sourced research produced by ${note.agentId}, with ${note.sources.length} sources.`);
  await command('meeting',{participants:[note.agentId==='player'?'designer':note.agentId],delay:0});

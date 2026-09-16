@@ -1,5 +1,13 @@
 # Changelog
 
+## Animal customization and lighter onboarding — 2026-09-16
+
+- Optional, skippable animal, wardrobe, and personality segments with one final project prompt.
+- Fox, rabbit, cat, dog, otter, and frog voxel avatars; four outfits, three hats plus no hat, and outfit colors.
+- Draggable avatar preview and session-persisted appearance; animal choice is cosmetic.
+- Removed setup facts/constraints/questions and forced initial confirmation. Agents gather needed context during work.
+- 36 regression tests and local browser/workday checks pass. See [onboarding details](docs/onboarding.md).
+
 ## Unreleased — Steerable workday
 
 - Natural-language agent conversation with clarification, redirection, evidence questions, and output requests interpreted by inference.

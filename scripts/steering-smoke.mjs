@@ -9,8 +9,8 @@ async function request(path,body,method=body?'POST':'GET'){
 const command=(type,extra={})=>request('session/commands',{type,commandId:crypto.randomUUID(),...extra});
 async function ready(){for(let n=0;n<60;n++){const s=await request('session');if(!s.project.pending)return s;assert(s.calls<18,'Smoke test call cutoff reached.');await new Promise(r=>setTimeout(r,2000))}throw new Error('Guidance timed out.');}
 try{
- await request('sessions',{invite,name:'Steering validation',role:'Product lead',persona:'Pragmatic and evidence focused',interests:'Improve employee onboarding.',intent:'Develop a small prototype experiment.',privateNotes:'STEERING-PRIVATE-CANARY'});
- let s=await ready();assert(s.project.waiting);assert(s.project.question);console.log('Initial confirmation received.');
+ await request('sessions',{invite,name:'Steering validation',role:'Product lead',persona:'Pragmatic and evidence focused',species:'otter',outfit:'polo',hat:'cap',color:'#70c6e4',interests:'Improve employee onboarding.',intent:'Develop a small prototype experiment.',privateNotes:'STEERING-PRIVATE-CANARY'});
+ let s=await ready();assert(s.project.brief);assert.equal(s.agents[0].species,'otter');assert.equal(s.agents[0].outfit,'polo');assert.equal(s.agents[0].hat,'cap');console.log('Initial project review received.');
  await command('pause');
  await command('message',{text:'Correction: customer onboarding, not employee onboarding. Focus on keyboard accessibility before performance. Our internal launch owner has not decided which customer segment we can recruit. Ask me for that decision before choosing participants; do not guess or research our internal decision.'});
  s=await ready();assert(s.project.waiting,'Expected a human-context question');assert(/customer/i.test(s.project.brief.summary));assert(s.project.question);const calls=s.calls;const minute=s.minute;
@@ -20,5 +20,5 @@ try{
  await command('message',{text:'What evidence supports the proposal? Be explicit about what has not been researched. Preserve the current problem and constraints; this is an evidence question, not a change in scope.'});
  s=await ready();assert(s.project.artifact.version>version);assert(/customer/i.test(s.project.brief.summary));
  await command('finish');const report=await request('session/report');assert(report.markdown.includes('Living experiment brief'));
- const result={verifiedAt:new Date().toISOString(),url:base,calls:s.calls,checks:['initial confirmation','scope correction','human-context question','no autonomous calls while waiting','paused conversation','context supplied','living draft','evidence question','report'],brief:s.project.markdown,conversation:s.project.messages};await writeFile('.local/steering-smoke-result.json',JSON.stringify(result,null,2));console.log(JSON.stringify({passed:true,calls:s.calls,draft:s.project.artifact.version,checks:result.checks}));
+ const result={verifiedAt:new Date().toISOString(),url:base,calls:s.calls,checks:['initial project review','scope correction','human-context question','no autonomous calls while waiting','paused conversation','context supplied','living draft','evidence question','report'],brief:s.project.markdown,conversation:s.project.messages};await writeFile('.local/steering-smoke-result.json',JSON.stringify(result,null,2));console.log(JSON.stringify({passed:true,calls:s.calls,draft:s.project.artifact.version,checks:result.checks}));
 }finally{if(cookie){await request('session',undefined,'DELETE');console.log('Synthetic steering office deleted.');}}

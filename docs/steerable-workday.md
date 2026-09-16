@@ -4,6 +4,8 @@ Implemented September 15 and deployed September 16, 2026 at https://d88v6bepeim9
 
 ## Interaction
 
+Update September 16: [lighter onboarding](onboarding.md) replaces mandatory initial confirmation with conditional clarification, and removes the optional facts/constraints/questions setup fields. The original interaction description below records the first steering slice.
+
 The user talks naturally in **Your agent**. There are no clarification/redirect/challenge command buttons. A budgeted Bedrock call interprets the message, revises the working brief, answers the user, and selects the next step. The initial review requests confirmation. Missing human intent or internal organizational facts should trigger one focused question and suspend autonomous work until the user responds. Chat continues while the workday is manually paused without resuming the clock.
 
 The setup form optionally captures constraints, known facts, and open questions. Messages and these project fields can inform coworker exchanges and public research; raw personal profile notes remain excluded. This is not a comprehensive confidential-project permissions system.

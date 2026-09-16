@@ -56,3 +56,8 @@ test('routine synthesis never reapplies an earlier correction',async()=>{
  const s=newOffice(profile);s.project.pending=false;s.project.messages.push({role:'user',text:'Customer onboarding, not employee onboarding.'});
  const r=await guidance({mode:'bedrock',think:async()=>JSON.stringify(reply({contextChanged:true}))},s,{},async()=>{});assert.equal(r.contextChanged,false);
 });
+test('a human-decision gate overrides a drafting response that incorrectly continues',async()=>{
+ const s=newOffice(profile);applyCommand(s,{type:'message',commandId:'human',text:'Ask me which customer segment before choosing participants.'});let calls=0;
+ const r=await guidance({mode:'bedrock',think:async()=>++calls===1?JSON.stringify({needsInput:true,question:'Which customer segment can we recruit?'}):JSON.stringify(reply())},s,{},async()=>{});
+ assert.equal(r.needsInput,true);assert.equal(r.question,'Which customer segment can we recruit?');assert(r.reply.includes(r.question));assert.equal(calls,2);
+});

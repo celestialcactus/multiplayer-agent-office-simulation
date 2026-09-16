@@ -1,3 +1,4 @@
+import {appearance} from './appearance.mjs';
 import {createProject,projectContext,steer,applyGuidance,experimentMarkdown} from './project.mjs';
 import {workingStyle} from './personality.mjs';
 import { randomUUID } from 'node:crypto';
@@ -10,7 +11,7 @@ export const NPCS=[
 export function validateProfile(p){
  if(!p||typeof p!=='object')throw new Error('Agent configuration is required.');
  const out={};for(const [key,max,required] of [['name',40,true],['role',100,true],['persona',300,true],['interests',1800,true],['privateNotes',1200,false],['intent',800,false],['constraints',1000,false],['facts',1400,false],['unknowns',1000,false]]){if(p[key]!==undefined&&typeof p[key]!=='string')throw new Error(`Invalid ${key}.`);out[key]=(p[key]||'').trim();if(out[key].length>max||(required&&!out[key]))throw new Error(`Please supply ${key} (up to ${max} characters).`)}
- out.color=/^#[0-9a-f]{6}$/i.test(p.color||'')?p.color:'#b9f47a';return out;
+ Object.assign(out,appearance(p));return out;
 }
 export function newOffice(profile,{id=randomUUID(),mode='demo',now=Date.now(),callLimit=60}={}){
  const p=validateProfile(profile);const agents=[{id:'player',...p},...structuredClone(NPCS)].map(a=>({...a,activity:'Deep work',stalls:0,taskId:null}));

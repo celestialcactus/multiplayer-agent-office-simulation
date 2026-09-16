@@ -1,5 +1,11 @@
 # Changelog
 
+## Workday waiting status — 2026-09-16
+
+- Clock and office header explicitly show when autonomous work is waiting for human context or reviewing a reply.
+- Waiting notice explains that research and coworker exchanges are on hold, and how to continue; speed controls are disabled during the hold.
+- Diagnosed the hosted run at 09:02 with one model call as a human-context gate, not an avatar regression.
+
 ## Restore original animal style — 2026-09-16
 
 - Restored original box-built heads, ears, faces, and standing tails pending a new art reference.

@@ -1,5 +1,13 @@
 # Changelog
 
+## Agent report pagination - 2026-09-17
+
+- Report popup opens on the personal agent, with its living brief and research notes.
+- One page per agent, direct selection, Previous/Next controls, and independent report scrolling.
+- Full Markdown export retained; no additional inference or session reset required.
+- Syntax/build checks and browser navigation/layout verification passed.
+
+
 ## Conversation and idea readability - 2026-09-16
 
 - Dedicated keyboard-accessible conversation scrolling preserves reading position during polling and follows new messages only when already at the bottom.

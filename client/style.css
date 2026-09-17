@@ -15,3 +15,12 @@
 .chat-latest{width:100%;margin-top:8px;font-size:12px}.chat-latest[hidden]{display:none}
 #agent-message-form{padding-top:1px}#agent-message-form .full{margin-top:8px}
 .idea-description{font-size:13px!important}.event h3{line-height:1.4;overflow-wrap:anywhere}
+
+.agent-report-dialog{width:min(760px,calc(100vw - 24px));height:min(820px,90dvh);max-height:90dvh;padding:20px;overflow:hidden}
+.agent-report-dialog[open]{display:flex;flex-direction:column;gap:12px}
+.agent-report-dialog .dialog-head h2{margin:0;font-size:23px}
+.report-navigation label{margin:0 0 6px}.report-navigation nav{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;font-size:13px;color:var(--muted)}
+.agent-report-content{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;padding:0 12px 0 0;border-top:1px solid var(--line)}
+.agent-report-content:focus-visible{outline:2px solid var(--mint);outline-offset:2px}
+.agent-report-content>h3{font-size:20px;margin:16px 0 4px}.agent-report-content .report-body h1{font-size:22px}
+.agent-report-dialog>.full{flex-shrink:0;margin:0}

@@ -24,7 +24,7 @@ Existing ownership cookies, command deduplication, snapshot checkpoints, expiry,
 
 59 regression tests pass, including ten new tests for migration/JSON recovery, isolated steering, filtered research and exchanges, explicit sharing and supersession, context revision conflicts, foreign IDs, stale jobs, inference payload boundaries, thread limits, and linked deliverables. Syntax checks and production build pass. Browser verification covered creating and selecting threads, separate conversation content, shared-context editing, and expanded layout. The existing large Three.js bundle warning remains.
 
-Hosted validation is pending deployment; do not interpret local tests as a live-model quality result. The bounded `scripts/threads-smoke.mjs` scenario checks live independent briefs, targeted steering, shared revisions, focus, pause, restoration, and export, then deletes its synthetic office.
+Hosted validation passed on September 17, 2026 at 22:01 UTC using six model calls. The bounded `scripts/threads-smoke.mjs` scenario verified independent live briefs, targeted steering that preserved sibling inputs/messages, shared-context revisions and stale-artifact flags, explicit focus, manual pause, state restoration, and export of both thread deliverables. The synthetic office was deleted. This is a functional live check, not a comprehensive semantic-quality evaluation.
 
 ## Limits and next work
 

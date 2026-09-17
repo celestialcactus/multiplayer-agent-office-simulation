@@ -14,6 +14,10 @@ The client currently polls bounded snapshots. Incremental event reads and expect
 
 The [action-escalation slice](action-escalation.md) adds a structured assessment before project synthesis. Its executable capability allowlist is research or coworker discussion. The domain ledger tracks ready/running/completed/deferred actions separately from blocked dependent actions and human questions. Unknowns do not exclude a project from scheduling. A user reply can resolve the dependency; source evidence alone cannot decide internal intent or grant tool permission.
 
+## Planned next evolution
+
+The [context and autonomy build plan](context-and-autonomy-plan.md) defines proposed project/thread boundaries and work scheduling within the existing runtime. Its schema, context promotion, migration, and rollout sections are future work, not current capabilities.
+
 ## Original architecture proposal (historical)
 
 Companion to [the game concept](concept.md).

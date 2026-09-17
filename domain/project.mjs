@@ -6,7 +6,7 @@ export function createProject(profile){
 }
 export function projectContext(s,id){
  const p=s.project;if(!p||!p.knownBy.includes(id))return null;
- return {revision:p.revision,inputs:p.inputs,brief:p.brief,nextStep:p.nextStep,question:p.question,questions:p.questions?.filter(q=>q.status==='open'),actions:p.actions?.slice(-8),assessment:p.assessment,artifact:p.artifact?{proposal:p.artifact.proposal,test:p.artifact.test,successCriteria:p.artifact.successCriteria}:null};
+ return {threadId:p.id,threadTitle:p.title,sharedContext:s.sharedContext?{revision:s.sharedContext.revision,text:s.sharedContext.text,promotions:s.sharedContext.promotions.filter(x=>!x.superseded&&!!s.outputs.find(o=>o.id===x.outputId&&!o.superseded))}:null,revision:p.revision,inputs:p.inputs,brief:p.brief,nextStep:p.nextStep,question:p.question,questions:p.questions?.filter(q=>q.status==='open'),actions:p.actions?.slice(-8),assessment:p.assessment,artifact:p.artifact?{proposal:p.artifact.proposal,test:p.artifact.test,successCriteria:p.artifact.successCriteria}:null};
 }
 export function steer(s,text){
  if(typeof text!=='string'||!text.trim()||text.length>2000)throw new Error('Please write a message of 1–2000 characters.');
@@ -30,7 +30,7 @@ export function validateGuidance(raw,validEvidenceIds){
  if(r.artifact.evidenceIds.some(id=>!validEvidenceIds.includes(id)))throw new Error('Invalid project evidence reference.');return r;
 }
 export function applyGuidance(s,result){
- const p=s.project;if(result.contextChanged){for(const o of s.outputs)o.superseded=true;for(const i of s.ideas.filter(i=>i.originEvent||i.knownBy.includes('player')))i.superseded=true;for(const e of s.events.filter(e=>e.turns))e.superseded=true;result.artifact.evidenceIds=[]}
+ const p=s.project;if(result.contextChanged){for(const o of s.outputs.filter(o=>!s.threads||(o.threadId||'main')===p.id))o.superseded=true;for(const i of s.ideas.filter(i=>(!s.threads||(i.threadId||'main')===p.id)&&(i.originEvent||i.knownBy.includes('player'))))i.superseded=true;for(const e of s.events.filter(e=>e.turns&&(!s.threads||(e.threadId||'main')===p.id)))e.superseded=true;for(const shared of s.sharedContext?.promotions||[])if(s.outputs.find(o=>o.id===shared.outputId)?.superseded)shared.superseded=true;result.artifact.evidenceIds=[]}
  const fromUser=p.pending;
  const assessment=result.assessment||{action:result.nextStep,kind:'research',reason:'Continue useful work while preserving uncertainty.',question:result.needsInput?result.question:'',questionKind:result.needsInput?'clarification':'none',blockedAction:'',resolvesQuestion:fromUser&&!result.needsInput,assumptions:[]};
  const action=applyAssessment(p,assessment,{fromUser,scopeChanged:result.contextChanged&&assessment.resolvesQuestion&&fromUser});
@@ -38,12 +38,12 @@ export function applyGuidance(s,result){
  if(fromUser||p.messages.at(-1)?.text!==result.reply)p.messages.push({id:randomUUID(),role:'assistant',text:result.reply,revision:p.revision});p.messages=p.messages.slice(-80);
  if(p.artifact)p.artifactHistory.push(p.artifact);p.artifactHistory=p.artifactHistory.slice(-5);
  p.artifact={...result.artifact,version:(p.artifact?.version||0)+1,projectRevision:p.revision,stale:false};
- p.lastSynthesisCount=s.outputs.length+s.events.filter(e=>e.turns).length;
+ p.lastSynthesisCount=s.outputs.length+s.events.filter(e=>e.turns&&(!s.threads||(e.threadId||'main')===p.id)).length;
  // One executable step on the SAME idea; questions never exclude the whole project.
- for(const legacy of s.ideas.filter(i=>i.projectExploration||i.projectSeed))legacy.superseded=true;
+ for(const legacy of s.ideas.filter(i=>(i.projectExploration||i.projectSeed)&&(!s.threads||(i.threadId||'main')===p.id)))legacy.superseded=true;
  const taskText=p.brief.summary+'\nDesired outcome: '+p.brief.objective+'\nAction: '+action.title+'\nAssumptions: '+assessment.assumptions.join('; ');
- let idea=s.ideas.find(i=>i.projectTask);
- if(!idea){idea={id:randomUUID(),projectTask:true,contributors:['player'],originEvent:null};s.ideas.push(idea);}
+ let idea=s.ideas.find(i=>i.projectTask&&(!s.threads||(i.threadId||'main')===p.id));
+ if(!idea){idea={id:randomUUID(),threadId:p.id,projectTask:true,contributors:['player'],originEvent:null};s.ideas.push(idea);}
  if(idea.actionId!==action.id){idea.attempts=0;idea.status='queued';}
  Object.assign(idea,{text:taskText,actionId:action.id,knownBy:[...p.knownBy],superseded:false});
  if(['completed','deferred'].includes(action.status))idea.status=action.status==='completed'?'researched':'deferred';

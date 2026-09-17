@@ -133,3 +133,7 @@ Before D, settle thread/artifact ownership and shared-context promotion UX. Befo
 ## First implementation milestone
 
 Combine the minimum B–E elements into a one-project thread experience: navigable conversations, an editable shared context panel, thread-specific steering and questions, attributable shared findings, meaningful progress updates, and a linked deliverable. Validate context isolation and useful progress before adding the second project. Keep this plan updated with delivered evidence rather than marking proposed work complete in advance.
+
+## September 17 implementation checkpoint
+
+The foundational one-project thread slice is implemented; see [delivered behavior, validation, and remaining limits](threads-mvp.md). This does not mark phases A–G complete. In particular, semantic progress evaluation, structured fact records, automatic fair scheduling, and new tools remain planned.

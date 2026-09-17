@@ -8,7 +8,7 @@ export function conversationView(state,draft){
  (p.messages.length?p.messages.map(m=>'<article class="chat-message '+m.role+'"><strong>'+esc(m.role==='user'?'You':state.agents[0].name)+'</strong><div>'+renderMarkdown(m.text)+'</div></article>').join(''):'<p class="empty">Your agent is reviewing the starting brief. You can add context now.</p>')+
  (p.pending?'<p class="field-note" role="status">Your agent is updating its understanding…</p>':'')+
  '</div><button class="btn chat-latest" id="chat-latest" hidden>Jump to latest ↓</button>'+
- '<form id="agent-message-form"><label for="agent-message">Talk to your agent</label><textarea id="agent-message" maxlength="2000" required '+(disabled?'disabled':'')+' placeholder="Add context, correct an assumption, ask a question, or change what we should work on.">'+esc(draft)+'</textarea><p class="field-note">Project context here can inform coworker exchanges and research. Keep personal information in your private profile notes.</p><button class="btn primary full" '+(disabled?'disabled':'')+'>Send message</button></form>';
+ '<form id="agent-message-form"><label for="agent-message">Talk to your agent</label><textarea id="agent-message" maxlength="2000" required '+(disabled?'disabled':'')+' placeholder="Add context, correct an assumption, ask a question, or change what we should work on.">'+esc(draft)+'</textarea><p class="field-note">Messages apply to this conversation and its coworker exchanges. Use Project context for all threads; keep personal details in your private profile.</p><button class="btn primary full" '+(disabled?'disabled':'')+'>Send message</button></form>';
 }
 export function briefView(state){
  const p=state.project;if(!p)return '<p>Start a fresh office to use a living brief.</p>';

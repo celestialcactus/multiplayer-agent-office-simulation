@@ -22,6 +22,8 @@ Live mode requires an AWS account credential profile, `OFFICE_MODE=bedrock`, `AW
 
 ## Start here
 
+- [Thread-based MVP](docs/threads-mvp.md): separate conversations and deliverables, explicit shared context, targeted replies, and validation.
+
 - [Context, interaction, and autonomy build plan](docs/context-and-autonomy-plan.md): phased usability, project/thread isolation, progress evaluation, escalation, multi-project scheduling, and future tools.
 
 - [Action-level escalation](docs/action-escalation.md): build plan, action tracking, selective human input, and future tool boundaries.

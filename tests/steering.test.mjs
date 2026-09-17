@@ -55,7 +55,7 @@ test('synthesis cannot consume unshared NPC findings or private encounters',asyn
  s.events.push({id:'private',turns:[{agentId:'designer',text:'UNSHARED-CANARY'},{agentId:'backend',text:'Private exchange'}]});
  let data;await guidance({mode:'bedrock',think:async(_,d)=>{data=d;return JSON.stringify(d.trigger==='automatic synthesis'||d.trigger==='user input'?assessment():reply())}},s,{},async()=>{});
  assert(!JSON.stringify(data).includes('UNSHARED-CANARY'));
- const job={id:'npc',kind:'research',participants:['designer'],generation:0};s.job=job;s.project.dirty=false;
+ const job={id:'npc',kind:'research',participants:['designer'],candidates:[s.ideas.find(i=>i.knownBy.includes('designer')).id],generation:0};s.job=job;s.project.dirty=false;
  completeJob(s,job,{ideaId:s.ideas.find(i=>i.knownBy.includes('designer')).id,text:'New private finding',sources:[]});assert.equal(s.project.dirty,false);
 });
 test('an unanswered question still permits disconnect auto-pause',()=>{

@@ -1,5 +1,14 @@
 # Changelog
 
+## One-project threads - 2026-09-17
+
+- Separate thread conversations, briefs, actions, questions, and research context.
+- Explicit shared context and attributed finding promotion; targeted question replies.
+- Thread selector and expanded work area; viewing does not command a focus change.
+- Legacy checkpoint migration and feature gating for older runtime sessions.
+- 59 regression tests pass; see docs/threads-mvp.md for evidence and limits.
+
+
 ## Agent report pagination - 2026-09-17
 
 - Report popup opens on the personal agent, with its living brief and research notes.

@@ -1,5 +1,13 @@
 # Changelog
 
+## Checkpoint write-cost fix - 2026-09-22
+
+- Stop full snapshot writes for idle paused and completed offices.
+- Checkpoint clock-only progress every 30 seconds; renew leases with small fenced metadata updates.
+- Preserve immediate command, job-result, and model-budget durability; avoid duplicate-command writes.
+- 66 regression tests pass. See docs/checkpoint-cost-fix.md for incident evidence and hosted rollout status.
+
+
 ## One-project threads - 2026-09-17
 
 - Separate thread conversations, briefs, actions, questions, and research context.

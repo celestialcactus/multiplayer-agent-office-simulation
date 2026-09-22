@@ -10,6 +10,10 @@ The local version uses the same coordinator with file checkpoints. It has a Thre
 
 The client currently polls bounded snapshots. Incremental event reads and expected-version client commands below are future contracts. Command IDs are implemented for retry deduplication. DynamoDB stores transactional versioned snapshot chunks rather than individual semantic records in this first slice. Cross-session and shared human multiplayer memory remain out of scope.
 
+## Checkpoint write policy
+
+See the [September 22 cost correction](checkpoint-cost-fix.md). Meaningful work is checkpointed immediately; clock-only progress is saved every 30 seconds. Paused offices use small owner/version-fenced lease heartbeats, and completed offices have no timer-driven writes.
+
 ## Action-level work loop
 
 The [action-escalation slice](action-escalation.md) adds a structured assessment before project synthesis. Its executable capability allowlist is research or coworker discussion. The domain ledger tracks ready/running/completed/deferred actions separately from blocked dependent actions and human questions. Unknowns do not exclude a project from scheduling. A user reply can resolve the dependency; source evidence alone cannot decide internal intent or grant tool permission.

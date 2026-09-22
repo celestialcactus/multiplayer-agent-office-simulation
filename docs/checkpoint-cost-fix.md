@@ -22,8 +22,10 @@ The UI clock still ticks each second. An abrupt crash can lose up to 30 seconds 
 
 66 regression tests pass. New tests cover paused/completed idle writes, periodic active saves, duplicate commands, durable disconnect pause, reservation/result durability, throttled META heartbeats, and ownership-loss eviction. A 90-second clock-only simulation performs three periodic saves rather than 90.
 
-Hosted verification is pending deployment. `scripts/checkpoint-cost-smoke.mjs` creates a disposable office, checks stable snapshot versions during paused/completed observation windows, confirms lease renewal only while paused, and checks report access before cleanup.
+Hosted verification passed on September 22 at 23:32 UTC using two model calls. `scripts/checkpoint-cost-smoke.mjs` observed zero snapshot writes over 24 seconds while paused (with META lease renewal), then zero snapshot or lease writes over 16 seconds while complete. Report access passed and the synthetic office was deleted. These are direct metadata/version observations; billing totals will reflect usage with reporting lag.
 
 Existing microVMs retain old code. Updating the deployed runtime alone does not stop their write loops. Retire the affected completed runtime after deployment, retain its DynamoDB checkpoint, allow its old lease to expire, and verify the replacement can read its report without increasing snapshot versions.
 
 Follow-up: measure cost trends after billing data catches up; consider compact or incremental state persistence and explicit budget alerts as separate changes. No billing refund, credit, or alert configuration is claimed by this fix.
+
+The affected existing completed runtime was stopped after deployment, preserving its checkpoint. Recovery initially encountered the ownership lease and succeeded after handoff. At 23:34 UTC, its report was readable and its version stayed at 16,433 over a 20-second observation with repeated reads; the lease timestamp also stayed unchanged. No new office or loss of its report was required.

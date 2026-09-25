@@ -101,3 +101,8 @@ This is the first versioned pilot baseline. Cross-user multiplayer, cross-sessio
 ## Version 1 iteration — September 25, 2026 (local; not deployed)
 
 Added focused thread workspace, separate office/personal activity, scoped composers and drafts, bounded point-in-time forks, exchange-derived coworker awareness and contribution review, optional meeting agendas, and generation-only briefs/diagrams/code. Preserved idle checkpoint cost controls. See docs/swarm-workspace.md for validation and remaining rollout gates. Rollback baseline: prototype-v1-pre-swarm-workspace.
+
+
+## September 25, 2026 - Interactive office and discussion follow-ups
+
+Implemented ADRs 0003 and 0004 locally: overview-first navigation, full-height resizing, office plus steering, consolidated activity, clickable recorded exchanges, bounded follow-up agendas, and a read-only workday summary. See docs/office-interaction-slice.md for validation and limits. AWS deployment remains separate.

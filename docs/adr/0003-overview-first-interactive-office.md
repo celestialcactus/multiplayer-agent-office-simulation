@@ -1,7 +1,7 @@
 # ADR 0003: Overview-first navigation and an interactive office
 
 - Date: September 25, 2026
-- Status: Accepted direction; implementation planned
+- Status: Implemented locally; hosted validation pending
 - Refines: [ADR 0002](0002-overview-and-focused-thread-workspace.md)
 - Current implementation checkpoint: `0dd6349`, tagged `prototype-v1-swarm-workspace`
 
@@ -23,7 +23,7 @@ Keep the 3D environment visible alongside a conversation/steering surface and ob
 
 Reuse the selected thread and its composer, rather than creating another independent chat or global context. Always identify the steering destination. Switching between office and overview modes preserves drafts, history, selection, and work state. Viewing a coworker or their activity does not grant the owner's agent access to their private context and does not create direct NPC control.
 
-Move coworker profiles and their activity inspection into the office surface, reachable from an office roster and, where practical, avatar selection. Keep workday controls accessible without forcing users to leave their conversation. In-world activity indicators are deferred.
+Move coworker profiles and their activity inspection into the office surface, reachable from an office roster and, where practical, avatar selection. Keep workday controls accessible without forcing users to leave their conversation. [ADR 0004](0004-office-signals-and-discussion-followups.md) subsequently brings clickable activity/exchange bubbles into this slice.
 
 ### Consolidate repeated information
 
@@ -49,6 +49,6 @@ Summary generation must work when the call budget is exhausted: assemble a deter
 
 ## Boundaries and rollback
 
-This record documents the next adjustment; it does not implement it or deploy to AWS. Current source remains preserved at `prototype-v1-swarm-workspace` (`0dd6349`), after the collaboration/workspace implementation and before these layout changes. The older `prototype-v1-pre-swarm-workspace` baseline remains unchanged. Follow the [rollback procedure](README.md#recovery-procedure), including schema compatibility checks, before redeploying older code.
+This adjustment is implemented locally; see [validation evidence](../office-interaction-slice.md). It has not been deployed to AWS. The preceding source remains preserved at `prototype-v1-swarm-workspace` (`0dd6349`), after the collaboration/workspace implementation and before these layout changes. The older `prototype-v1-pre-swarm-workspace` baseline remains unchanged. Follow the [rollback procedure](README.md#recovery-procedure), including schema compatibility checks, before redeploying older code.
 
-Human multiplayer, longer workdays, persistent accounts, larger forks, generated-code execution, and in-world activity indicators remain out of scope. Summary inspection must not contaminate future thread context or trigger unbudgeted work.
+Human multiplayer, longer workdays, persistent accounts, larger forks, generated-code execution remain out of scope; in-world indicators are included by ADR 0004. Summary inspection must not contaminate future thread context or trigger unbudgeted work.

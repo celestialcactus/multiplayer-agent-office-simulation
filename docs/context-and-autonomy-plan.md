@@ -140,7 +140,7 @@ The foundational one-project thread slice is implemented; see [delivered behavio
 
 ## September 25 accepted next slices
 
-Follow-up presentation decisions are recorded in [ADR 0003](adr/0003-overview-first-interactive-office.md): default to the overview with focus collapsed, add a full-height resize boundary, preserve chat and steering in expanded office mode, consolidate activity/ideas, relocate coworker inspection into the office, and deliver the daily report as a dedicated summary thread. Its implementation sequence and acceptance gates apply after the `prototype-v1-swarm-workspace` checkpoint; these adjustments are not yet implemented.
+Follow-up presentation decisions are recorded in [ADR 0003](adr/0003-overview-first-interactive-office.md): default to the overview with focus collapsed, add a full-height resize boundary, preserve chat and steering in expanded office mode, consolidate activity/ideas, relocate coworker inspection into the office, and deliver the daily report as a dedicated summary thread. Its implementation sequence and acceptance gates apply after the `prototype-v1-swarm-workspace` checkpoint; these adjustments are now implemented locally, with [evidence and remaining gates](office-interaction-slice.md). ADR 0004 adds clickable office signals and bounded session discussion follow-ups to the same slice.
 
 Two [architecture decision records](adr/README.md) refine the next increment. The [local implementation checkpoint](swarm-workspace.md) records delivered mechanics, verification, and the remaining hosted/quality gates:
 

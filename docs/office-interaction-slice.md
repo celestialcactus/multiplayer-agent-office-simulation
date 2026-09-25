@@ -31,3 +31,7 @@ These tests use scripted demo inference. They do not establish live collaboratio
 Test locally at port 5190: expand Office, select an exchange bubble, queue a follow-up, steer the selected thread, restore the overview, resize the divider, and inspect Workday summary after finishing. Existing completed offices remain read-only; start a fresh office to test new follow-ups.
 
 Source branch: codex/steerable-workday. Rollback baseline: prototype-v1-swarm-workspace (0dd6349), with the prior decision checkpoint at 82e6642. Deploy and record hosted validation only after the local frontend iteration is accepted.
+
+### Navigation follow-up
+
+Unchanged navigation and overview markup now retain their DOM elements across polling, preserving focus and reducing interrupted clicks. Activity links distinguish Read exchange from Open work thread. Browser checks confirmed thread cards open the focused pane, navigation focus survives several poll cycles, and Read exchange opens the recorded turns. Syntax and production build checks passed.

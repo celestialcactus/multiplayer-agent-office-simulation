@@ -137,3 +137,12 @@ Combine the minimum B–E elements into a one-project thread experience: navigab
 ## September 17 implementation checkpoint
 
 The foundational one-project thread slice is implemented; see [delivered behavior, validation, and remaining limits](threads-mvp.md). This does not mark phases A–G complete. In particular, semantic progress evaluation, structured fact records, automatic fair scheduling, and new tools remain planned.
+
+## September 25 accepted next slices
+
+Two [architecture decision records](adr/README.md) refine the next increment. They are accepted designs, not delivered capabilities:
+
+- [Backend collaboration and artifacts](adr/0001-agent-collaboration-and-artifacts.md): proactive specialist contributions, work awareness learned through exchanges, optional meeting agendas, owner-controlled synthesis, and selectable generation-only deliverables. Code drafts and diagrams move into this increment; code execution, developer environments, repository changes, and deployment remain deferred. No fixed banking scenario is imposed.
+- [Frontend overview and focused threads](adr/0002-overview-and-focused-thread-workspace.md): Focus mode by default, a persistent activity/thread overview beside a focused conversation, explicitly scoped composers, separate personal and office activity, meaningful status indicators, point-in-time forks, and a compact movable office view. One project is supported initially; account persistence remains deferred.
+
+Implement against the shared event, thread, contribution, and artifact contracts in these ADRs. Validate context boundaries and backend behavior independently of presentation, then integrate and verify the complete interaction. Preserve checkpoint cost controls and existing session recovery. The ADR acceptance gates supplement the migration and rollout requirements above; neither ADR authorizes new infrastructure or claims implementation is complete.

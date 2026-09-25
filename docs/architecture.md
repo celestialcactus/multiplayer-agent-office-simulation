@@ -20,6 +20,8 @@ The [action-escalation slice](action-escalation.md) adds a structured assessment
 
 ## Planned next evolution
 
+The [September 25 ADRs](adr/README.md) define the next backend collaboration/artifact slice and frontend overview/focused-thread workspace. These are accepted designs awaiting implementation; the ADR index records the pre-change rollback baseline.
+
 The [context and autonomy build plan](context-and-autonomy-plan.md) defines proposed project/thread boundaries and work scheduling within the existing runtime. Its schema, context promotion, migration, and rollout sections are future work, not current capabilities.
 
 ## Original architecture proposal (historical)

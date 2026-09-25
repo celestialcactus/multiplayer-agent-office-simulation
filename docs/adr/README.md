@@ -6,6 +6,9 @@ These records capture accepted design decisions. Acceptance does not mean implem
 | --- | --- | --- |
 | [0001](0001-agent-collaboration-and-artifacts.md) | Proactive agent collaboration and generation-only deliverables | Local implementation; hosted/quality validation pending |
 | [0002](0002-overview-and-focused-thread-workspace.md) | Persistent activity overview beside a focused thread | Local implementation; hosted validation pending |
+| [0003](0003-overview-first-interactive-office.md) | Overview-first navigation, interactive expanded office, consolidated updates, and workday summary thread | Accepted direction; implementation planned |
+
+ADR 0003 refines the initial layout in ADR 0002. The current implementation is separately preserved at `prototype-v1-swarm-workspace` (`0dd6349`) before these next adjustments; the earlier baseline below is retained.
 
 See [implementation evidence and remaining limits](../swarm-workspace.md). Acceptance gates remain the rollout criteria; local implementation does not imply every gate has been demonstrated in production.
 

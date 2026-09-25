@@ -140,6 +140,8 @@ The foundational one-project thread slice is implemented; see [delivered behavio
 
 ## September 25 accepted next slices
 
+Follow-up presentation decisions are recorded in [ADR 0003](adr/0003-overview-first-interactive-office.md): default to the overview with focus collapsed, add a full-height resize boundary, preserve chat and steering in expanded office mode, consolidate activity/ideas, relocate coworker inspection into the office, and deliver the daily report as a dedicated summary thread. Its implementation sequence and acceptance gates apply after the `prototype-v1-swarm-workspace` checkpoint; these adjustments are not yet implemented.
+
 Two [architecture decision records](adr/README.md) refine the next increment. The [local implementation checkpoint](swarm-workspace.md) records delivered mechanics, verification, and the remaining hosted/quality gates:
 
 - [Backend collaboration and artifacts](adr/0001-agent-collaboration-and-artifacts.md): proactive specialist contributions, work awareness learned through exchanges, optional meeting agendas, owner-controlled synthesis, and selectable generation-only deliverables. Code drafts and diagrams move into this increment; code execution, developer environments, repository changes, and deployment remain deferred. No fixed banking scenario is imposed.

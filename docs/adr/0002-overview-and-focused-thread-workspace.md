@@ -10,6 +10,8 @@ The current office/sidebar layout is cluttered and makes concurrent awareness di
 
 ## Decision
 
+Subsequent review: [ADR 0003](0003-overview-first-interactive-office.md) supersedes the initial open focused pane and refines office interactivity, information placement, and daily reporting. The implementation described here remains the tagged checkpoint before that adjustment.
+
 Use Focus mode by default, with a persistent overview beside a focused conversation. Support one real project now, with navigation designed to accommodate more later; do not show nonfunctional project creation controls.
 
 ### Workspace regions

@@ -35,3 +35,7 @@ Source branch: codex/steerable-workday. Rollback baseline: prototype-v1-swarm-wo
 ### Navigation follow-up
 
 Unchanged navigation and overview markup now retain their DOM elements across polling, preserving focus and reducing interrupted clicks. Activity links distinguish Read exchange from Open work thread. Browser checks confirmed thread cards open the focused pane, navigation focus survives several poll cycles, and Read exchange opens the recorded turns. Syntax and production build checks passed.
+
+### Exact discussion in the focused pane
+
+Exchange cards now offer Open discussion, routing by exchange ID into the focused pane. The popup also offers Open discussion in chat. Open related work thread remains a separate navigation action. Two distinct recorded exchanges were checked in-browser: each card opened its matching event ID and participants, remained selected across polling, and navigated separately back to the work thread. Inspection retains the existing session-scoped follow-up rules; it creates no work-thread slot or model call. Unknown work-thread targets are rejected instead of silently switching to the active thread. All 103 tests and syntax/build checks passed.

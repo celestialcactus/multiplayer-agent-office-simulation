@@ -96,3 +96,8 @@ Package version `1.0.0`; Git tag `prototype-v1-baseline`.
 - Deployment scripts, architecture notes, validation evidence, and 22 regression tests.
 
 This is the first versioned pilot baseline. Cross-user multiplayer, cross-session memory, and arbitrary development tools are deferred. Research can still contain unsupported inferences despite citation checks and a review pass. Local secrets, invites, session data, generated infrastructure bundles, and build output are excluded from Git.
+
+
+## Version 1 iteration — September 25, 2026 (local; not deployed)
+
+Added focused thread workspace, separate office/personal activity, scoped composers and drafts, bounded point-in-time forks, exchange-derived coworker awareness and contribution review, optional meeting agendas, and generation-only briefs/diagrams/code. Preserved idle checkpoint cost controls. See docs/swarm-workspace.md for validation and remaining rollout gates. Rollback baseline: prototype-v1-pre-swarm-workspace.

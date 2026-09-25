@@ -140,9 +140,11 @@ The foundational one-project thread slice is implemented; see [delivered behavio
 
 ## September 25 accepted next slices
 
-Two [architecture decision records](adr/README.md) refine the next increment. They are accepted designs, not delivered capabilities:
+Two [architecture decision records](adr/README.md) refine the next increment. The [local implementation checkpoint](swarm-workspace.md) records delivered mechanics, verification, and the remaining hosted/quality gates:
 
 - [Backend collaboration and artifacts](adr/0001-agent-collaboration-and-artifacts.md): proactive specialist contributions, work awareness learned through exchanges, optional meeting agendas, owner-controlled synthesis, and selectable generation-only deliverables. Code drafts and diagrams move into this increment; code execution, developer environments, repository changes, and deployment remain deferred. No fixed banking scenario is imposed.
 - [Frontend overview and focused threads](adr/0002-overview-and-focused-thread-workspace.md): Focus mode by default, a persistent activity/thread overview beside a focused conversation, explicitly scoped composers, separate personal and office activity, meaningful status indicators, point-in-time forks, and a compact movable office view. One project is supported initially; account persistence remains deferred.
 
 Implement against the shared event, thread, contribution, and artifact contracts in these ADRs. Validate context boundaries and backend behavior independently of presentation, then integrate and verify the complete interaction. Preserve checkpoint cost controls and existing session recovery. The ADR acceptance gates supplement the migration and rollout requirements above; neither ADR authorizes new infrastructure or claims implementation is complete.
+
+The September 25 local slice adds collaboration, generation-only collateral, the overview/focused workspace, and bounded forks. Larger forks are out of scope for the current workday; longer runs and persistence require another increment. General fair multi-thread scheduling, autonomous artifact requests, persistent drawers, and live comparative evaluation remain future work. No AWS deployment is implied by the source push.

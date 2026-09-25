@@ -1,0 +1,63 @@
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const read=new Map(),collapsedBranches=new Set();let filter='personal',newDraft='',key='',navCollapsed=false,overviewPosition=0;
+const saveLayout=office=>{try{sessionStorage.setItem('office-layout',JSON.stringify({left:office.style.left,top:office.style.top,width:office.style.width,height:office.style.height,hidden:office.classList.contains('preview-hidden')}))}catch{}};
+const stamp=t=>JSON.stringify([t.messages?.at(-1)?.id,t.markdown,t.questions?.filter(q=>q.status==='open').map(q=>q.id),t.revision]);
+export function threadStatus(s,t){
+ if(s.status==='complete')return {icon:'◼',label:'Day ended'};
+ if(s.status==='paused')return {icon:'Ⅱ',label:'Paused'};
+ if(s.work?.threadId===t.id||t.actions?.some(a=>a.status==='running'))return {icon:'◌',label:'Processing',processing:true};
+ if(t.pending||(s.artifactRequests||[]).some(a=>a.threadId===t.id&&a.status==='queued'))return {icon:'◷',label:'Queued'};
+ if(t.questions?.some(q=>q.status==='open'))return {icon:'?',label:'Input requested'};
+ if(t.actions?.some(a=>a.status==='ready'))return {icon:'◷',label:'Ready'};
+ return {icon:'○',label:'Exploring'};
+}
+export function focusConversation(){setMobilePane(false)}
+function setMobilePane(overview){const stream=document.querySelector('.overview-stream');if(stream?.getClientRects().length)overviewPosition=stream.scrollTop;document.querySelector('.layout')?.classList.toggle('mobile-overview',overview);document.querySelectorAll('[data-mobile-pane]').forEach(b=>b.setAttribute('aria-pressed',String((b.dataset.mobilePane==='overview')===overview)));if(overview&&stream)stream.scrollTop=overviewPosition;window.dispatchEvent(new Event('office-pane-change'));}
+export function mountWorkspace(){
+ const layout=document.querySelector('.layout');if(layout.classList.contains('focus-workspace'))return;
+ layout.classList.add('focus-workspace');
+ layout.insertAdjacentHTML('afterbegin','<div class="mobile-pane-switch" role="group" aria-label="Workspace view"><button class="btn" data-mobile-pane="overview" aria-pressed="false">Overview</button><button class="btn" data-mobile-pane="conversation" aria-pressed="true">Conversation</button></div><nav id="project-nav" aria-label="Projects and threads"></nav><section id="overview" aria-label="Activity overview"></section>');
+ document.querySelectorAll('[data-mobile-pane]').forEach(b=>b.onclick=()=>setMobilePane(b.dataset.mobilePane==='overview'));
+ const office=document.querySelector('.workspace');office.classList.add('office-preview');
+ office.insertAdjacentHTML('afterbegin','<div class="preview-handle" tabindex="0" role="button" aria-label="Move office preview with arrow keys"><span>THE OFFICE · drag to move</span><button class="btn" id="expand-office">Expand</button><button class="btn" id="hide-office" aria-label="Hide office preview">×</button></div>');
+ document.querySelector('header').insertAdjacentHTML('beforeend','<div class="workspace-actions"><button class="btn" id="toggle-nav" aria-label="Toggle project navigation">☰</button><button class="btn" id="show-office">Office</button><button class="btn" id="open-settings">Settings</button></div>');
+ try{const saved=JSON.parse(sessionStorage.getItem('office-layout')||'null');if(saved){for(const k of ['left','top','width','height'])if(saved[k])office.style[k]=saved[k];if(saved.top)office.style.bottom='auto';office.classList.toggle('preview-hidden',Boolean(saved.hidden));}}catch{}
+ const handle=office.querySelector('.preview-handle');let drag;
+ const position=(x,y)=>{office.style.left=Math.max(0,Math.min(x,innerWidth-office.offsetWidth))+'px';office.style.top=Math.max(0,Math.min(y,innerHeight-office.offsetHeight))+'px';office.style.right='auto';office.style.bottom='auto';};
+ handle.onpointerdown=e=>{if(e.target.closest('button')||office.classList.contains('office-expanded'))return;drag={x:e.clientX,y:e.clientY,left:office.offsetLeft,top:office.offsetTop};handle.setPointerCapture(e.pointerId);};
+ handle.onpointermove=e=>{if(drag)position(drag.left+e.clientX-drag.x,drag.top+e.clientY-drag.y);};
+ handle.onpointerup=()=>{drag=null;saveLayout(office)};
+ handle.onkeydown=e=>{if(e.target!==handle||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;e.preventDefault();position(office.offsetLeft+({ArrowLeft:-20,ArrowRight:20}[e.key]||0),office.offsetTop+({ArrowUp:-20,ArrowDown:20}[e.key]||0));saveLayout(office);};
+ const expand=()=>{const expanded=office.classList.toggle('office-expanded');document.querySelector('#expand-office').textContent=expanded?'Restore':'Expand';document.querySelector('#expand-office').setAttribute('aria-pressed',String(expanded));};
+ document.querySelector('#expand-office').onclick=expand;
+ document.querySelector('#hide-office').onclick=()=>{office.classList.add('preview-hidden');saveLayout(office)};
+ document.querySelector('#show-office').onclick=()=>{if(innerWidth<=800)office.classList.add('office-expanded');office.classList.toggle('preview-hidden');saveLayout(office)};
+ document.querySelector('#toggle-nav').onclick=()=>{if(innerWidth<=800){setMobilePane(!layout.classList.contains('mobile-overview'));return}navCollapsed=!navCollapsed;layout.classList.toggle('nav-collapsed',navCollapsed)};
+ new ResizeObserver(()=>{if(!office.classList.contains('office-expanded'))saveLayout(office)}).observe(office);
+ window.addEventListener('resize',()=>{if(office.style.left)position(office.offsetLeft,office.offsetTop)});
+}
+export function updateWorkspace(s,selected,{change,command,modal,toast,settings}){
+ mountWorkspace();
+ if(key!==s.createdAt){key=s.createdAt;read.clear();try{for(const [id,value] of JSON.parse(sessionStorage.getItem('office-read-'+key)||'[]'))read.set(id,value)}catch{}}
+ const threads=s.threads||[s.project],current=threads.find(t=>t.id===selected)||s.project;
+ if(!(innerWidth<=800&&document.querySelector('.layout').classList.contains('mobile-overview')))read.set(current.id,stamp(current));try{sessionStorage.setItem('office-read-'+key,JSON.stringify([...read]))}catch{}
+ const unread=t=>read.get(t.id)!==stamp(t);
+ const label=t=>{const status=threadStatus(s,t);return `<span class="work-indicator ${status.processing?'processing':''}" aria-hidden="true">${status.icon}</span><span>${esc(t.title||'Your project')}<small>${esc(status.label)}${unread(t)?' · Unread update':''}</small></span>${unread(t)?'<span class="unread-dot" aria-label="Unread update"></span>':''}`};
+ const tree=(parent=null)=>threads.filter(t=>parent?t.parentThreadId===parent:!t.parentThreadId||!threads.some(p=>p.id===t.parentThreadId)).map(t=>`<div class="thread-tree-node"><div class="thread-tree-row"><button class="nav-thread ${t.id===selected?'selected':''} ${t.parentThreadId?'fork-child':''}" data-open-thread="${esc(t.id)}" aria-current="${t.id===selected?'page':'false'}">${t.parentThreadId?'<span aria-label="Fork">↳</span>':''}${label(t)}</button>${threads.some(c=>c.parentThreadId===t.id)?`<button class="branch-toggle" data-toggle-branch="${esc(t.id)}" aria-label="Toggle branches of ${esc(t.title)}" aria-expanded="${!collapsedBranches.has(t.id)}">${collapsedBranches.has(t.id)?'▸':'▾'}</button>`:''}</div>${collapsedBranches.has(t.id)?'':tree(t.id)}</div>`).join('');
+ const nav=document.querySelector('#project-nav'),navScroll=nav.scrollTop;
+ nav.innerHTML=`<div class="eyebrow">WORKSPACE</div><h2>Your project</h2><button class="btn primary full" id="nav-new-thread" ${s.status==='complete'?'disabled':''}>＋ New thread</button><div class="nav-thread-list">${tree()}</div><p class="field-note retention-note">One project · this workday only<br>Session context expires after 8 hours.</p>`;nav.scrollTop=navScroll;
+ const overview=document.querySelector('#overview'),old=overview.querySelector('.overview-stream'),scroll=old?.getClientRects().length?old.scrollTop:overviewPosition;overviewPosition=scroll;
+ const draftFocus=document.activeElement?.id==='new-thread-draft',selection=draftFocus?[document.activeElement.selectionStart,document.activeElement.selectionEnd]:null;
+ const personal=s.events.filter(e=>e.agentId==='player'||e.participants?.includes('player')||e.turns?.some(t=>t.agentId==='player')||s.outputs?.some(o=>o.id===e.outputId&&o.agentId==='player')||(!e.participants&&!e.outputId&&['Narration','Artifact','Report','Budget','Schedule'].includes(e.kind)));
+ const events=filter==='office'?s.events:personal;
+ overview.innerHTML=`<div class="overview-heading"><div class="eyebrow">STAY IN THE LOOP</div><h2>Conversations</h2><button class="overview-resizer" aria-label="Resize overview. Drag or use arrow keys." title="Drag or use arrow keys to resize overview">⋮</button><div class="stream-filters" role="group" aria-label="Activity audience"><button class="btn ${filter==='personal'?'active':''}" data-stream="personal">Your agent</button><button class="btn ${filter==='office'?'active':''}" data-stream="office">Office</button></div></div><div class="overview-stream" tabindex="0" aria-label="Threads and recent activity">${filter==='personal'?threads.map(t=>`<button class="exchange-card ${t.id===selected?'selected':''}" data-open-thread="${esc(t.id)}"><div class="exchange-title">${label(t)}</div><p>${esc((t.messages?.at(-1)?.text||t.objective||t.nextStep||'Starting a new investigation').slice(0,190))}</p><small>${t.messages?.length||0} messages${t.parentThreadId?' · Forked conversation':''} · Open thread →</small></button>`).join(''):''}<h3 class="stream-subtitle">${filter==='personal'?'Your agent’s recent activity':'Around the office'}</h3>${events.slice(-18).reverse().map(e=>`<article class="activity-card"><small>${esc(e.kind)}${e.threadId?' · '+esc(threads.find(t=>t.id===e.threadId)?.title||''):''}</small><strong>${esc(e.title)}</strong><p>${esc((e.text||e.turns?.map(t=>t.text).join(' ')||'').slice(0,260))}</p>${e.threadId&&threads.some(t=>t.id===e.threadId)?`<button class="btn ghost" data-open-thread="${esc(e.threadId)}">Open conversation →</button>`:''}</article>`).join('')||'<p class="empty">Meaningful work and exchanges will appear here.</p>'}</div><form id="overview-compose"><label for="new-thread-draft">Start a new thread</label><textarea id="new-thread-draft" maxlength="1800" placeholder="What would you like to explore next?" ${s.status==='complete'?'disabled':''}>${esc(newDraft)}</textarea><button class="btn primary full" ${s.status==='complete'||!s.capabilities?.includes('threads-v1')?'disabled':''}>Create & open thread →</button></form>`;
+ overview.querySelector('.overview-stream').scrollTop=scroll;
+ const resize=overview.querySelector('.overview-resizer');let resizing=false;const width=n=>{const value=Math.max(220,Math.min(n,innerWidth*.45));document.querySelector('.layout').style.setProperty('--overview-width',value+'px');try{sessionStorage.setItem('overview-width',value)}catch{}};try{const saved=Number(sessionStorage.getItem('overview-width'));if(saved)width(saved)}catch{}resize.onpointerdown=e=>{resizing=true;resize.setPointerCapture(e.pointerId)};resize.onpointermove=e=>{if(resizing)width(e.clientX-overview.getBoundingClientRect().left)};resize.onpointerup=()=>resizing=false;resize.onkeydown=e=>{if(['ArrowLeft','ArrowRight'].includes(e.key)){e.preventDefault();width(overview.offsetWidth+(e.key==='ArrowLeft'?-20:20))}};
+ const draft=overview.querySelector('#new-thread-draft');draft.oninput=()=>newDraft=draft.value;if(draftFocus){draft.focus({preventScroll:true});draft.setSelectionRange(...selection)}
+ const start=()=>{draft.focus();overview.querySelector('#overview-compose').scrollIntoView({block:'nearest'})};document.querySelector('#nav-new-thread').onclick=start;
+ overview.querySelector('#overview-compose').onsubmit=async e=>{e.preventDefault();if(!newDraft.trim())return;const text=newDraft;const button=e.submitter;button.disabled=true;const prior=new Set(threads.map(t=>t.id));const next=await command('createThread',{title:text.trim().slice(0,70),objective:text});if(next){newDraft='';const created=next.threads.find(t=>!prior.has(t.id));if(created)change(created.id)}else button.disabled=false;};
+ document.querySelectorAll('[data-open-thread]').forEach(b=>b.onclick=()=>change(b.dataset.openThread));
+ overview.querySelectorAll('[data-stream]').forEach(b=>b.onclick=()=>{filter=b.dataset.stream;updateWorkspace(s,selected,{change,command,modal,toast,settings})});
+ document.querySelectorAll('[data-toggle-branch]').forEach(b=>b.onclick=()=>{const id=b.dataset.toggleBranch;if(collapsedBranches.has(id))collapsedBranches.delete(id);else collapsedBranches.add(id);updateWorkspace(s,selected,{change,command,modal,toast,settings})});
+ document.querySelector('#open-settings').onclick=settings;
+}

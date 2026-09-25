@@ -12,6 +12,8 @@ export function reportPages(state,markdown){
   const open=state.ideas.filter(i=>!i.superseded&&i.knownBy.includes('player')&&i.knownBy.includes(agent.id)&&i.status!=='researched');
   return {name:agent.name,personal,role:agent.role,markdown:[
    personal?markdown.split('\n## Research outputs')[0]:'',
+   ...(personal&&state.deliverables?.length?['## Generated collateral — unexecuted and unverified',...state.deliverables.map(d=>`### ${d.title} · revision ${d.version}${d.superseded?' — historical draft':''}\n\n${d.content}`)]:[]),
+   ...(personal&&state.contributions?.length?['## Collaboration decisions',...state.contributions.map(c=>`- ${state.agents.find(a=>a.id===c.fromAgentId)?.name||c.fromAgentId}: ${c.status} — ${c.decisionReason}`)]:[]),
    '## Research learnings',...sections,...(!notes.length?['No research notes were completed by this agent during this workday.']:[]),
    '## Open ideas',open.length?open.map(i=>'- '+i.text).join('\n'):'No open ideas recorded.'
   ].filter(Boolean).join('\n\n')};

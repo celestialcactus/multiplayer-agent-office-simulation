@@ -4,8 +4,10 @@ These records capture accepted design decisions. Acceptance does not mean implem
 
 | ADR | Decision | Status |
 | --- | --- | --- |
-| [0001](0001-agent-collaboration-and-artifacts.md) | Proactive agent collaboration and generation-only deliverables | Accepted; implementation planned |
-| [0002](0002-overview-and-focused-thread-workspace.md) | Persistent activity overview beside a focused thread | Accepted; implementation planned |
+| [0001](0001-agent-collaboration-and-artifacts.md) | Proactive agent collaboration and generation-only deliverables | Local implementation; hosted/quality validation pending |
+| [0002](0002-overview-and-focused-thread-workspace.md) | Persistent activity overview beside a focused thread | Local implementation; hosted validation pending |
+
+See [implementation evidence and remaining limits](../swarm-workspace.md). Acceptance gates remain the rollout criteria; local implementation does not imply every gate has been demonstrated in production.
 
 The [build plan](../context-and-autonomy-plan.md) remains the work sequence. The ADRs refine its next collaboration and presentation slices. Delivered behavior is recorded in [threads MVP](../threads-mvp.md) and [checkpoint cost fix](../checkpoint-cost-fix.md).
 

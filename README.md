@@ -22,6 +22,8 @@ Live mode requires an AWS account credential profile, `OFFICE_MODE=bedrock`, `AW
 
 ## Start here
 
+- [Collaboration and focused workspace](docs/swarm-workspace.md): local implementation, generation-only deliverables, bounded forks, verification, and rollout limits.
+
 - [Architecture decision records](docs/adr/README.md): accepted backend collaboration and frontend workspace slices, plus the rollback baseline.
 
 - [Thread-based MVP](docs/threads-mvp.md): separate conversations and deliverables, explicit shared context, targeted replies, and validation.

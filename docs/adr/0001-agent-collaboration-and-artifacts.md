@@ -1,7 +1,7 @@
 # ADR 0001: Proactive agent collaboration and generation-only deliverables
 
 - Date: September 25, 2026
-- Status: Accepted; implementation planned
+- Status: Accepted; local implementation available; hosted and comparative quality validation pending
 - Related: [ADR 0002](0002-overview-and-focused-thread-workspace.md), [build plan](../context-and-autonomy-plan.md)
 
 ## Context
@@ -50,5 +50,7 @@ Account profiles and long-term memory are future inputs to this structure. Do no
 6. Budgets, isolation, recovery, and idle-write regressions pass. Live checks use bounded synthetic sessions and explicit cleanup.
 
 ## Consequences
+
+Implementation evidence and remaining limits are tracked in [the collaboration/workspace slice](../swarm-workspace.md). The first slice uses lexical relevance for proactive handoffs and user-triggered artifact requests; it does not claim measured quality improvement over a single agent.
 
 Requires work/awareness/contribution records and versioned artifacts beyond today's research-note model. High initiative adds scheduling pressure and must be evaluated, not assumed productive. Generation-only code cannot be represented as a verified implementation. Multi-project prioritization, account memory, human multiplayer, and external tools remain separate future decisions.

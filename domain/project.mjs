@@ -6,6 +6,7 @@ export function createProject(profile){
 }
 export function projectContext(s,id){
  const p=s.project;if(!p||!p.knownBy.includes(id))return null;
+ if(id!=='player'){const learned=(s.awareness||[]).find(a=>a.agentId===id&&a.subjectAgentId==='player'&&a.threadId===p.id);return learned?{threadId:p.id,objective:learned.objective,originEvent:learned.originEvent}:null;}
  return {threadId:p.id,threadTitle:p.title,sharedContext:s.sharedContext?{revision:s.sharedContext.revision,text:s.sharedContext.text,promotions:s.sharedContext.promotions.filter(x=>!x.superseded&&!!s.outputs.find(o=>o.id===x.outputId&&!o.superseded))}:null,revision:p.revision,inputs:p.inputs,brief:p.brief,nextStep:p.nextStep,question:p.question,questions:p.questions?.filter(q=>q.status==='open'),actions:p.actions?.slice(-8),assessment:p.assessment,artifact:p.artifact?{proposal:p.artifact.proposal,test:p.artifact.test,successCriteria:p.artifact.successCriteria}:null};
 }
 export function steer(s,text){
@@ -15,8 +16,7 @@ export function steer(s,text){
  p.revision++;const id=randomUUID();p.inputs.push({id,text:text.trim()});p.messages.push({id,role:'user',text:text.trim(),revision:p.revision});
  p.pending=true;p.nextStep='Updating my understanding from your message.';p.dirty=false;
  for(const action of p.actions||[])if(action.status==='running')action.status='ready';
- s.generation++;s.job=null;s.busy=false;s.agents.forEach(a=>a.activity='Reviewing context');
- for(const m of s.meetings.filter(m=>['active','discussed'].includes(m.status)))m.status='done';
+ if(!s.job||(s.job.threadId||s.activeThreadId)===p.id){const request=(s.artifactRequests||[]).find(r=>r.id===s.job?.requestId);if(request)request.status='queued';s.generation++;s.job=null;s.busy=false;s.agents.forEach(a=>a.activity='Reviewing context');for(const m of s.meetings.filter(m=>m.threadId===p.id&&['active','discussed'].includes(m.status)))m.status='done';}
  // Mark the draft stale until the message has been interpreted.
  if(p.artifact)p.artifact.stale=true;
 }
@@ -26,11 +26,13 @@ export function validateGuidance(raw,validEvidenceIds){
  const v=JSON.parse(raw.replace(/^```(?:json)?\s*/,'').replace(/\s*```$/,''));
  if(typeof v.needsInput!=='boolean'||typeof v.contextChanged!=='boolean')throw new Error('Invalid project response.');
  const r={contextChanged:v.contextChanged,reply:string(v.reply,1600,true),needsInput:v.needsInput,question:string(v.question,500),nextStep:string(v.nextStep,500,true),brief:{summary:string(v.brief?.summary,1200,true),objective:string(v.brief?.objective,800),constraints:list(v.brief?.constraints),facts:list(v.brief?.facts),hypotheses:list(v.brief?.hypotheses),unknowns:list(v.brief?.unknowns)},artifact:{proposal:string(v.artifact?.proposal,1400),test:string(v.artifact?.test,1400),successCriteria:string(v.artifact?.successCriteria,800),evidenceIds:list(v.artifact?.evidenceIds,10)}};
+ if(v.contributionDecisions!==undefined){if(!Array.isArray(v.contributionDecisions)||v.contributionDecisions.length>12)throw new Error('Invalid contribution decisions.');r.contributionDecisions=v.contributionDecisions.map(c=>{if(!['accepted','rejected'].includes(c.status))throw new Error('Invalid contribution decision.');return {id:string(c.id,80,true),status:c.status,reason:string(c.reason,500,true)}});}
  if(r.needsInput&&!r.question)throw new Error('Invalid project question.');
  if(r.artifact.evidenceIds.some(id=>!validEvidenceIds.includes(id)))throw new Error('Invalid project evidence reference.');return r;
 }
 export function applyGuidance(s,result){
- const p=s.project;if(result.contextChanged){for(const o of s.outputs.filter(o=>!s.threads||(o.threadId||'main')===p.id))o.superseded=true;for(const i of s.ideas.filter(i=>(!s.threads||(i.threadId||'main')===p.id)&&(i.originEvent||i.knownBy.includes('player'))))i.superseded=true;for(const e of s.events.filter(e=>e.turns&&(!s.threads||(e.threadId||'main')===p.id)))e.superseded=true;for(const shared of s.sharedContext?.promotions||[])if(s.outputs.find(o=>o.id===shared.outputId)?.superseded)shared.superseded=true;result.artifact.evidenceIds=[]}
+ const p=s.project;if(result.contextChanged){for(const item of [...(s.contributions||[]),...(s.deliverables||[])])if(item.threadId===p.id)item.superseded=true;for(const o of s.outputs.filter(o=>!s.threads||(o.threadId||'main')===p.id))o.superseded=true;for(const i of s.ideas.filter(i=>(!s.threads||(i.threadId||'main')===p.id)&&(i.originEvent||i.knownBy.includes('player'))))i.superseded=true;for(const e of s.events.filter(e=>e.turns&&(!s.threads||(e.threadId||'main')===p.id)))e.superseded=true;for(const shared of s.sharedContext?.promotions||[])if(s.outputs.find(o=>o.id===shared.outputId)?.superseded)shared.superseded=true;result.artifact.evidenceIds=[]}
+ for(const decision of result.contributionDecisions||[]){const item=(s.contributions||[]).find(c=>c.id===decision.id&&c.threadId===p.id&&c.status==='offered'&&!c.superseded);if(item){item.status=decision.status;item.decisionReason=decision.reason;}}
  const fromUser=p.pending;
  const assessment=result.assessment||{action:result.nextStep,kind:'research',reason:'Continue useful work while preserving uncertainty.',question:result.needsInput?result.question:'',questionKind:result.needsInput?'clarification':'none',blockedAction:'',resolvesQuestion:fromUser&&!result.needsInput,assumptions:[]};
  const action=applyAssessment(p,assessment,{fromUser,scopeChanged:result.contextChanged&&assessment.resolvesQuestion&&fromUser});
@@ -45,7 +47,7 @@ export function applyGuidance(s,result){
  let idea=s.ideas.find(i=>i.projectTask&&(!s.threads||(i.threadId||'main')===p.id));
  if(!idea){idea={id:randomUUID(),threadId:p.id,projectTask:true,contributors:['player'],originEvent:null};s.ideas.push(idea);}
  if(idea.actionId!==action.id){idea.attempts=0;idea.status='queued';}
- Object.assign(idea,{text:taskText,actionId:action.id,knownBy:[...p.knownBy],superseded:false});
+ Object.assign(idea,{text:taskText,actionId:action.id,knownBy:['player'],superseded:false});
  if(['completed','deferred'].includes(action.status))idea.status=action.status==='completed'?'researched':'deferred';
  s.agents.forEach(a=>{if(a.id==='player'||a.activity==='Reviewing context'||a.activity==='Waiting for you')a.activity='Deep work'});
 }

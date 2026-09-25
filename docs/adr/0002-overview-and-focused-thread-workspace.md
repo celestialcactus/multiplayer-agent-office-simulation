@@ -1,7 +1,7 @@
 # ADR 0002: Persistent overview and focused-thread workspace
 
 - Date: September 25, 2026
-- Status: Accepted; implementation planned
+- Status: Accepted; local implementation available; hosted validation pending
 - Related: [ADR 0001](0001-agent-collaboration-and-artifacts.md), [build plan](../context-and-autonomy-plan.md)
 
 ## Context
@@ -62,5 +62,7 @@ Frontend and backend slices may proceed in parallel against the event/thread/art
 Acceptance: users can create a thread from the overview, reply to the selected thread, inspect another update without losing their draft, navigate a fork, identify queued versus active work, and return from expanded office mode. Confirm keyboard navigation, independent scroll/focus preservation during polling, responsive layouts, constrained dragging/resizing, and safe content rendering. Backend tests verify composer routing and fork inheritance; no live cross-thread contamination should be masked by UI-only separation. Preserve feature compatibility for older runtime sessions during staged rollout.
 
 ## Consequences
+
+Implementation evidence is tracked in [the collaboration/workspace slice](../swarm-workspace.md). Settings/details remain modal dialogs in this increment; persistent resizable drawers are still planned. Larger forks are out of scope for the workday until longer sessions and persistence are supported; reject them clearly without copying partial context.
 
 Requires new navigation and layout state, per-thread read markers, branch provenance, and a unified activity contract. Read/layout changes must not trigger costly session rewrites. User profile persistence and durable long-term history remain future work. Source rollback is anchored by the [pre-change baseline](README.md#pre-change-rollback-baseline); schema compatibility and AWS deployment must be assessed independently of reverting frontend files.

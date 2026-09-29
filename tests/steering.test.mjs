@@ -71,3 +71,18 @@ test('action assessment names a precise dependency while retaining useful same-i
  const r=await guidance({mode:'bedrock',think:async()=>{calls++;return JSON.stringify(calls===1?assessment({question:'Which customer segment can we recruit?',questionKind:'decision',blockedAction:'Choose recruitment participants'}):reply());}},s,{},async()=>{});
  assert.equal(r.needsInput,true);assert.equal(r.assessment.blockedAction,'Choose recruitment participants');assert.equal(r.nextStep,'Compare accessible onboarding approaches');assert.equal(calls,2);
 });
+
+
+test('guidance repair identifies a missing artifact and supplies the invalid response',async()=>{
+ const s=newOffice(profile),bad=reply();delete bad.artifact;const prompts=[];
+ const assessment={action:'Compare public keyboard navigation guidance.',kind:'research',reason:'Public evidence can inform the draft.',assumptions:[],question:'',questionKind:'none',blockedAction:'',resolvesQuestion:false};
+ const answers=[JSON.stringify(assessment),JSON.stringify(bad),JSON.stringify(reply())];
+ const inference={mode:'bedrock',think:async(system,data,reserve)=>{await reserve();prompts.push(data);return answers.shift()}};
+ let calls=0;const result=await guidance(inference,s,{kind:'guidance'},async()=>calls++);
+ assert.equal(calls,3);assert.match(prompts[2].validationError,/top-level artifact/);assert.equal(prompts[2].invalidResponse,JSON.stringify(bad));assert(result.artifact.proposal);
+});
+test('technical brief failure preserves questions and does not demand user input or spam duplicate replies',()=>{
+ const s=newOffice(profile,{now:0});const j=tick(s,1000);completeJob(s,j,{error:'Invalid model response'});
+ assert.equal(s.project.waiting,false);assert.equal(s.project.question,'');const count=s.project.messages.length;
+ s.project.dirty=true;const next=tick(s,10000);assert.equal(next.kind,'guidance');completeJob(s,next,{error:'Invalid model response'});assert.equal(s.project.messages.length,count);
+});
